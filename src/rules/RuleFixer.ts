@@ -30,6 +30,14 @@ export class RuleFixer {
    * @returns FixResult with the fixed code and applied/failed fixes
    */
   async fixFile(fileContent: string, violations: RuleViolation[]): Promise<FixResult> {
+    // Validate input violations
+    for (const v of violations) {
+      if (!v.ruleId) {
+        console.warn('Skipping violation without ruleId');
+        continue;
+      }
+    }
+
     const lines = fileContent.split('\n');
     const appliedFixes: FixResult['appliedFixes'] = [];
     const failedFixes: FixResult['failedFixes'] = [];
@@ -42,6 +50,7 @@ export class RuleFixer {
     if (fixableViolations.length === 0) {
       return {
         success: true,
+        partial: false,
         fixedCode: this.options.dryRun ? undefined : fileContent,
         appliedFixes: [],
         failedFixes: [],
@@ -95,6 +104,7 @@ export class RuleFixer {
 
     return {
       success: failedFixes.length === 0,
+      partial: appliedFixes.length > 0 && failedFixes.length > 0,
       fixedCode: this.options.dryRun ? undefined : workingLines.join('\n'),
       appliedFixes,
       failedFixes,
@@ -135,7 +145,8 @@ export class RuleFixer {
 
     // Determine if we're doing partial line replacement or full line replacement
     if (column !== undefined && match && match.index !== undefined) {
-      // Partial line replacement based on column and match position
+      // column is 1-based from violation, match.index is 0-based from regex
+      // The column represents where the match starts in the line
       const columnIndex = column - 1; // Convert to 0-based
       const matchStart = columnIndex + match.index;
       const matchEnd = matchStart + match[0].length;
@@ -191,11 +202,15 @@ export class RuleFixer {
     // Handle special replacement patterns
     result = result
       .replace(/\$&/g, match[0]) // Replace $& with entire match
+      .replace(/\$0/g, match[0]) // Support $0 as alias for entire match (standard regex behavior)
       .replace(/\$`/g, '') // $` (before match) - not supported in this context
       .replace(/\$'/g, ''); // $' (after match) - not supported in this context
 
     // Handle escaped dollar signs
     result = result.replace(/\\\$/g, '$');
+
+    // Handle $$ escape sequence (standard regex behavior)
+    result = result.replace(/\$\$/g, '$');
 
     return result;
   }

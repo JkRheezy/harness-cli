@@ -288,6 +288,172 @@ describe('RuleFixer', () => {
 
       expect(result.fixedCode).toBe('price: $10');
     });
+
+    it('should support $0 as alias for entire match', async () => {
+      const fileContent = 'TODO: fix this';
+      const match = ['TODO'] as RegExpMatchArray;
+      match.index = 0;
+
+      const violations: RuleViolation[] = [
+        {
+          ruleId: 'todo-format',
+          ruleName: 'TODO Format',
+          severity: 'warning' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 1,
+          message: 'Format TODO',
+          autoFixable: true,
+          fix: {
+            replacement: '[$0]', // $0 should be replaced with entire match
+          },
+          match,
+        },
+      ];
+
+      const result = await fixer.fixFile(fileContent, violations);
+
+      expect(result.fixedCode).toBe('[TODO]: fix this');
+    });
+
+    it('should handle $$ escape sequence for literal dollar sign', async () => {
+      const fileContent = 'price: 10';
+      const match = ['10'] as RegExpMatchArray;
+      match.index = 7;
+
+      const violations: RuleViolation[] = [
+        {
+          ruleId: 'add-currency',
+          ruleName: 'Add Currency',
+          severity: 'warning' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 8,
+          message: 'Add currency symbol',
+          autoFixable: true,
+          fix: {
+            replacement: '$$10', // $$ should be replaced with literal $
+          },
+          match,
+        },
+      ];
+
+      const result = await fixer.fixFile(fileContent, violations);
+
+      expect(result.fixedCode).toBe('price: $10');
+    });
+
+    it('should support multi-digit capture groups ($10)', async () => {
+      // Create a match array with 11 elements (index 0-10)
+      const match = ['match0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10'] as RegExpMatchArray;
+      match.index = 0;
+
+      const fileContent = 'match0';
+
+      const violations: RuleViolation[] = [
+        {
+          ruleId: 'multi-capture',
+          ruleName: 'Multi Capture',
+          severity: 'warning' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 1,
+          message: 'Replace with 10th capture group',
+          autoFixable: true,
+          fix: {
+            replacement: '[$10]', // $10 should reference the 10th capture group
+          },
+          match,
+        },
+      ];
+
+      const result = await fixer.fixFile(fileContent, violations);
+
+      expect(result.success).toBe(true);
+      expect(result.fixedCode).toBe('[m10]');
+    });
+
+    it('should handle overlapping fixes on same line (documenting current behavior)', async () => {
+      // When fixes overlap on the same line, they are applied right-to-left
+      // This means the rightmost fix is applied first, then the leftmost
+      // Depending on the replacement, this may produce unexpected results
+      const fileContent = 'var a = 1, b = 2;';
+
+      const violations: RuleViolation[] = [
+        {
+          ruleId: 'no-var',
+          ruleName: 'No Var',
+          severity: 'error' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 1,
+          message: 'Use const',
+          autoFixable: true,
+          fix: {
+            replacement: 'const', // Replace 'var' at column 1
+          },
+        },
+        {
+          ruleId: 'prefer-let',
+          ruleName: 'Prefer Let',
+          severity: 'warning' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 12,
+          message: 'Use let for b',
+          autoFixable: true,
+          fix: {
+            replacement: 'let', // Replace at column 12
+          },
+        },
+      ];
+
+      const result = await fixer.fixFile(fileContent, violations);
+
+      // Both fixes should be applied (non-overlapping in this case)
+      expect(result.success).toBe(true);
+      expect(result.appliedFixes).toHaveLength(2);
+    });
+
+    it('should set partial: true when some fixes succeed and others fail', async () => {
+      const fileContent = 'var x = 1;';
+
+      const violations: RuleViolation[] = [
+        {
+          ruleId: 'no-var',
+          ruleName: 'No Var',
+          severity: 'error' as Severity,
+          filePath: 'test.ts',
+          line: 1,
+          column: 1,
+          message: 'Use const',
+          autoFixable: true,
+          fix: {
+            replacement: 'const',
+          },
+        },
+        {
+          ruleId: 'nonexistent-rule',
+          ruleName: 'Nonexistent Rule',
+          severity: 'error' as Severity,
+          filePath: 'test.ts',
+          line: 999, // Out of range line
+          column: 1,
+          message: 'This will fail',
+          autoFixable: true,
+          fix: {
+            replacement: 'fix',
+          },
+        },
+      ];
+
+      const result = await fixer.fixFile(fileContent, violations);
+
+      expect(result.success).toBe(false);
+      expect(result.partial).toBe(true);
+      expect(result.appliedFixes).toHaveLength(1);
+      expect(result.failedFixes).toHaveLength(1);
+    });
   });
 
   describe('generateFixReport', () => {

@@ -84,6 +84,8 @@ export interface RuleViolation {
 export interface FixResult {
   /** Whether the fix operation was successful */
   success: boolean;
+  /** true if some fixes applied but others failed */
+  partial: boolean;
   /** The fixed code (if successful) */
   fixedCode?: string;
   /** List of successfully applied fixes */
