@@ -528,3 +528,8 @@ Pushing to https://github.com/JkRheezy/pin-ecommerce.git
 2026-04-01T06:13:25.324Z [32minfo[39m: 📊 统计: 完成0, 失败1, 升级0
 2026-04-01T15:59:21.950Z [32minfo[39m: 🔧 Invoking skill: non-existent
 2026-04-01T15:59:21.955Z [33mwarn[39m: Skill non-existent not found at .config/agents/skills/non-existent
+2026-04-01T16:03:12.544Z [32minfo[39m: 🎨 Starting design phase for: Test Task
+2026-04-01T16:03:12.546Z [32minfo[39m: 🧠 Running brainstorming...
+2026-04-01T16:03:12.557Z [33mwarn[39m: Brainstorming skill not found, using fallback
+2026-04-01T16:03:12.558Z [32minfo[39m: 📝 Running planning...
+2026-04-01T16:03:12.560Z [33mwarn[39m: Writing-plans skill not found, using fallback
