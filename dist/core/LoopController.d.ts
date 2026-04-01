@@ -40,6 +40,10 @@ export declare class LoopController extends EventEmitter {
     private stats;
     private actionHistory;
     private hasGeneratedInitialTasks;
+    private designPhase;
+    private prWorkflow;
+    private errorHandler;
+    private enableSuperpowers;
     constructor(config: LoopConfig);
     start(options: LoopOptions): Promise<void>;
     stop(): Promise<void>;
@@ -70,5 +74,6 @@ export declare class LoopController extends EventEmitter {
     private loadCheckpoint;
     private cleanup;
     private sleep;
+    private isFatalError;
 }
 //# sourceMappingURL=LoopController.d.ts.map

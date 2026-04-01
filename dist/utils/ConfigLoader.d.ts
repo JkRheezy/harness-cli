@@ -20,6 +20,12 @@ export interface HarnessConfig {
     github: {
         token: string;
     };
+    superpowers?: {
+        enabled: boolean;
+        autoDesign: boolean;
+        requireApproval: boolean;
+        skillsPath: string;
+    };
     projectPath?: string;
 }
 export declare class ConfigLoader {

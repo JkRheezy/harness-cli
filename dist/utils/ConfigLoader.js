@@ -30,6 +30,12 @@ class ConfigLoader {
             },
             github: {
                 token: process.env.GITHUB_TOKEN || ''
+            },
+            superpowers: {
+                enabled: true,
+                autoDesign: true,
+                requireApproval: false,
+                skillsPath: '.config/agents/skills'
             }
         };
         // 尝试读取配置文件

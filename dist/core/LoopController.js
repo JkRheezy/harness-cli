@@ -45,6 +45,9 @@ const Logger_1 = require("../utils/Logger");
 const CheckpointManager_1 = require("./CheckpointManager");
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
+const DesignPhase_1 = require("./DesignPhase");
+const PRWorkflow_1 = require("./PRWorkflow");
+const ResilientLoop_1 = require("./ResilientLoop");
 class LoopController extends events_1.EventEmitter {
     constructor(config) {
         super();
@@ -70,6 +73,11 @@ class LoopController extends events_1.EventEmitter {
         this.stateManager = new StateManager_1.StateManager();
         this.safetyGuard = new SafetyGuard_1.SafetyGuard(config.safety);
         this.checkpointManager = new CheckpointManager_1.CheckpointManager();
+        // Initialize Superpowers components
+        this.enableSuperpowers = true; // Can be from config
+        this.designPhase = new DesignPhase_1.DesignPhase(true);
+        this.prWorkflow = new PRWorkflow_1.PRWorkflow();
+        this.errorHandler = new ResilientLoop_1.ResilientErrorHandler(3);
     }
     async start(options) {
         this.isRunning = true;
@@ -414,6 +422,18 @@ class LoopController extends events_1.EventEmitter {
     }
     async executeTask(task, options) {
         const startTime = Date.now();
+        // Design Phase (if Superpowers enabled)
+        if (this.enableSuperpowers) {
+            const designResult = await this.designPhase.run(task);
+            if (!designResult.approved) {
+                this.logger.warn(`⏳ Task ${task.id} design not approved, skipping`);
+                return {
+                    status: 'skipped',
+                    reason: 'design_not_approved',
+                    duration: Date.now() - startTime
+                };
+            }
+        }
         try {
             // 更新任务状态
             task.status = 'running';
@@ -447,11 +467,19 @@ class LoopController extends events_1.EventEmitter {
         this.logger.info(`   状态: ${result.status}`);
         this.logger.info(`   耗时: ${result.duration}ms`);
         if (result.status === 'success') {
-            // 更新统计
             this.stats.completed++;
             this.recordAction(`task_complete:${task.id}`);
-            // 自动创建 PR
-            if (result.hasChanges && !result.dryRun) {
+            // PR Workflow (if not dry run and has changes)
+            if (result.hasChanges && !result.dryRun && this.enableSuperpowers) {
+                const prResult = await this.prWorkflow.run(task, result);
+                if (prResult.prNumber > 0) {
+                    task.prUrl = prResult.prUrl;
+                    task.prNumber = prResult.prNumber;
+                    task.prMerged = prResult.merged;
+                }
+            }
+            // Legacy PR creation fallback
+            if (result.hasChanges && !result.dryRun && !this.enableSuperpowers) {
                 await this.createPR(task, result);
             }
             // 更新任务状态
@@ -464,27 +492,24 @@ class LoopController extends events_1.EventEmitter {
             this.emit('taskCompleted', { task, result });
         }
         else if (result.status === 'failed') {
-            this.stats.failed++;
-            this.recordAction(`task_failed:${task.id}`);
-            // 判断是否需要升级
-            if (await this.shouldEscalate(task, result)) {
-                await this.escalateTask(task, result);
-            }
-            else if (result.canRetry && (task.retryCount || 0) < 3) {
-                // 重试
+            // Use resilient error handler instead of immediate failure
+            const errorResult = await this.errorHandler.handleFailure(task, new Error(result.error), task.retryCount || 0);
+            if (errorResult.shouldRetry) {
+                // Retry the task
                 task.retryCount = (task.retryCount || 0) + 1;
                 task.status = 'pending';
-                task.lastError = result.error;
                 await this.taskQueue.enqueue(task);
-                this.logger.info(`🔄 任务 ${task.id} 将在 ${task.retryCount} 秒后重试`);
-                await this.sleep(task.retryCount * 1000);
+                this.logger.info(`🔄 Task ${task.id} queued for retry (attempt ${task.retryCount})`);
             }
-            else {
+            else if (errorResult.fixTaskId) {
+                // Fix task created, mark current as failed
+                this.stats.failed++;
+                this.recordAction(`task_failed:${task.id}`);
                 task.status = 'failed';
                 task.result = result;
+                task.fixTaskId = errorResult.fixTaskId;
                 await this.taskQueue.update(task);
-                // 生成修复任务
-                await this.generateFixTask(task, result);
+                this.logger.info(`📥 Fix task ${errorResult.fixTaskId} created for failed task`);
             }
         }
     }
@@ -722,6 +747,16 @@ class LoopController extends events_1.EventEmitter {
     }
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    isFatalError(error) {
+        const fatalPatterns = [
+            'Out of memory',
+            'Cannot find module',
+            'EACCES',
+            'EPERM'
+        ];
+        const errorMessage = error.message || String(error);
+        return fatalPatterns.some(p => errorMessage.includes(p));
     }
 }
 exports.LoopController = LoopController;
