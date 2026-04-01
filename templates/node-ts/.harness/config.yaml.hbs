@@ -1,0 +1,59 @@
+# Harness 配置文件
+# 用于无人值守 Agent 开发
+
+project:
+  name: {{projectName}}
+  description: {{projectDescription}}
+  type: node-ts
+
+# LLM 配置
+llm:
+  # 提供商: openai | anthropic | kimi | google | local
+  provider: openai
+  
+  # 模型名称（根据 provider 选择）
+  # OpenAI: gpt-4, gpt-4-turbo, gpt-3.5-turbo
+  # Kimi: kimi-for-coding, moonshot-v1-32k, moonshot-v1-128k
+  # Anthropic: claude-3-opus, claude-3-sonnet
+  model: gpt-4
+  
+  # API Key（建议通过环境变量设置）
+  # OpenAI: ${OPENAI_API_KEY}
+  # Kimi: ${KIMI_API_KEY} (sk-kimi-xxx 格式)
+  # Anthropic: ${ANTHROPIC_API_KEY}
+  apiKey: ${OPENAI_API_KEY}
+  
+  # 自定义 API 端点（可选）
+  # Kimi For Coding: https://api.kimi.com/coding/v1
+  # Kimi 通用: https://api.moonshot.cn/v1
+  baseUrl: null
+  
+  maxTokens: 4096
+  temperature: 0.3  # 代码生成建议 0.2-0.3
+  timeout: 120000
+
+# 安全边界配置
+safety:
+  maxExecutionTime: 14400000  # 4小时
+  maxErrorRate: 0.3
+  maxComplexity: 10
+
+# 检查点配置
+checkpoint:
+  enabled: true
+  interval: 300000  # 5分钟
+
+# PR 自动化配置
+pr:
+  autoCreate: true
+  autoReview: true
+  autoMerge: false  # 建议手动确认
+
+# 通知配置
+notifications:
+  slack:
+    webhook: ${SLACK_WEBHOOK_URL}
+  email:
+    smtp: ${SMTP_HOST}
+    user: ${SMTP_USER}
+    pass: ${SMTP_PASS}

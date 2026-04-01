@@ -1,0 +1,20 @@
+2026-03-31T11:31:34.182Z [32minfo[39m: 📦 使用模板: node-ts
+2026-03-31T11:31:34.183Z [32minfo[39m: 🎯 目标目录: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli\my-test-app
+2026-03-31T11:31:34.224Z [32minfo[39m: ✅ 项目创建完成！
+2026-03-31T11:32:02.459Z [32minfo[39m: 📦 使用模板: node-ts
+2026-03-31T11:32:02.461Z [32minfo[39m: 🎯 目标目录: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli\my-test-app2
+2026-03-31T11:32:02.475Z [32minfo[39m: ✅ 项目创建完成！
+2026-03-31T11:33:56.040Z [32minfo[39m: 📦 使用模板: node-ts
+2026-03-31T11:33:56.042Z [32minfo[39m: 🎯 目标目录: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli\D:\test\my-project
+2026-03-31T11:33:56.044Z [31merror[39m: 创建失败: ENOENT: no such file or directory, mkdir 'D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli\D:\test\my-project'
+2026-03-31T11:35:34.386Z [32minfo[39m: 📦 使用模板: node-ts
+2026-03-31T11:35:34.388Z [32minfo[39m: 🎯 目标目录: D:\test\my-project
+2026-03-31T11:35:34.402Z [32minfo[39m: ✅ 项目创建完成！
+2026-03-31T17:38:56.367Z [32minfo[39m: 🚀 启动 Harness 无人值守 Loop...
+2026-03-31T17:38:56.377Z [32minfo[39m: 🚀 Loop 控制器已启动
+2026-03-31T17:38:56.377Z [32minfo[39m: ⏱️  最大运行时长: 6小时
+2026-03-31T17:38:56.378Z [32minfo[39m: 🧪 模拟模式: 是
+2026-03-31T17:38:56.386Z [32minfo[39m: 📋 任务队列为空，分析项目生成初始任务...
+2026-03-31T17:38:56.387Z [33mwarn[39m: ⚠️ 未找到开发计划，跳过任务生成
+2026-03-31T17:38:56.417Z [33mwarn[39m: 无法解析仓库信息: fatal: not a git repository (or any of the parent directories): .git
+

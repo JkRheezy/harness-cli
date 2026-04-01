@@ -1,0 +1,66 @@
+# AGENTS.md - Agent 协作指南
+
+> 本文档是 AI Agent 的入口指南，长度控制在 80-120 行
+
+## 1. 快速开始 (2分钟)
+
+### 1.1 项目概述
+- **项目名称**: {{projectName}}
+- **技术栈**: TypeScript / Node.js
+- **核心功能**: {{projectDescription}}
+
+### 1.2 环境准备
+```bash
+# 安装依赖
+npm install
+
+# 启动开发环境
+npm run dev
+
+# 运行测试
+npm test
+```
+
+## 2. 项目结构
+
+```
+src/
+├── types/          # Layer 1: 类型定义
+├── config/         # Layer 2: 配置管理
+├── repo/           # Layer 3: 数据访问
+├── service/        # Layer 4: 业务逻辑
+├── runtime/        # Layer 5: 运行时
+└── ui/             # Layer 6: 界面层
+```
+
+## 3. 关键文档索引
+
+| 文档 | 路径 | 阅读时间 |
+|------|------|----------|
+| 架构总览 | docs/ARCHITECTURE.md | 5 min |
+| API 文档 | docs/API.md | 10 min |
+| 开发规范 | docs/DEVELOPMENT.md | 5 min |
+
+## 4. 常见任务
+
+### 4.1 添加新功能
+1. 在 `src/types/` 定义类型
+2. 在 `src/service/` 实现业务逻辑
+3. 添加单元测试
+4. 更新文档
+
+### 4.2 修复 Bug
+1. 编写回归测试
+2. 实施修复
+3. 运行测试验证
+
+## 5. 重要约束
+
+- ❌ 不要违反层依赖规则（下层不依赖上层）
+- ✅ 必须为新功能编写测试
+- ⚠️ 复杂逻辑需要注释说明
+
+## 6. 寻求帮助
+
+- 查看 docs/references/troubleshooting.md
+- 运行 `harness status` 查看系统状态

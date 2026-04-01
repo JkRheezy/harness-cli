@@ -1,0 +1,629 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LoopController = void 0;
+const events_1 = require("events");
+const TaskQueue_1 = require("./TaskQueue");
+const TaskExecutor_1 = require("./TaskExecutor");
+const ReviewAgent_1 = require("./ReviewAgent");
+const PRAutomator_1 = require("./PRAutomator");
+const StateManager_1 = require("./StateManager");
+const SafetyGuard_1 = require("./SafetyGuard");
+const Logger_1 = require("../utils/Logger");
+const CheckpointManager_1 = require("./CheckpointManager");
+const fs = __importStar(require("fs/promises"));
+const path = __importStar(require("path"));
+class LoopController extends events_1.EventEmitter {
+    constructor(config) {
+        super();
+        this.isRunning = false;
+        this.startTime = 0;
+        this.currentTask = null;
+        this.stats = {
+            completed: 0,
+            failed: 0,
+            escalated: 0
+        };
+        this.actionHistory = [];
+        this.hasGeneratedInitialTasks = false;
+        this.config = config;
+        this.logger = new Logger_1.Logger();
+        this.taskQueue = new TaskQueue_1.TaskQueue();
+        this.executor = new TaskExecutor_1.TaskExecutor(config.llm);
+        this.reviewer = new ReviewAgent_1.ReviewAgent(config.llm);
+        this.prAutomator = new PRAutomator_1.PRAutomator();
+        this.stateManager = new StateManager_1.StateManager();
+        this.safetyGuard = new SafetyGuard_1.SafetyGuard(config.safety);
+        this.checkpointManager = new CheckpointManager_1.CheckpointManager();
+    }
+    async start(options) {
+        this.isRunning = true;
+        this.startTime = Date.now();
+        this.logger.info('🚀 Loop 控制器已启动');
+        this.logger.info(`⏱️  最大运行时长: ${options.maxDuration / (1000 * 60 * 60)}小时`);
+        this.logger.info(`🧪 模拟模式: ${options.dryRun ? '是' : '否'}`);
+        // 加载之前的检查点（如果有）
+        await this.loadCheckpoint();
+        // 启动检查点定时器
+        if (this.config.checkpoint.enabled) {
+            this.startCheckpointTimer();
+        }
+        // 主循环
+        while (this.isRunning) {
+            try {
+                // 检查是否超过最大运行时间
+                if (this.shouldStop(options.maxDuration)) {
+                    this.logger.info('⏰ 达到最大运行时长，停止 Loop');
+                    break;
+                }
+                // 安全检查
+                const safetyCheck = await this.safetyGuard.checkLoopHealth(this.getContext());
+                if (!safetyCheck.passed) {
+                    this.logger.warn('⚠️  安全检查未通过:', safetyCheck.reason);
+                    await this.handleSafetyViolation(safetyCheck);
+                    continue;
+                }
+                // 获取任务
+                this.currentTask = await this.taskQueue.dequeue({ timeout: 30000 });
+                if (!this.currentTask) {
+                    // 队列为空时，尝试从项目分析生成任务
+                    if (!this.hasGeneratedInitialTasks) {
+                        this.logger.info('📋 任务队列为空，分析项目生成初始任务...');
+                        await this.generateTasksFromProject();
+                        this.hasGeneratedInitialTasks = true;
+                        continue;
+                    }
+                    // 无任务，短暂休眠
+                    await this.sleep(1000);
+                    continue;
+                }
+                this.logger.info(`📋 开始执行任务: ${this.currentTask.title}`);
+                this.recordAction(`task_start:${this.currentTask.id}`);
+                // 执行任务
+                const result = await this.executeTask(this.currentTask, options);
+                // 处理结果
+                await this.processResult(this.currentTask, result);
+            }
+            catch (error) {
+                this.logger.error('Loop 执行错误:', error);
+                this.recordAction(`error:${error.message}`);
+                await this.handleLoopError(error);
+            }
+        }
+        this.logger.info('🏁 Loop 已停止');
+        this.logger.info(`📊 统计: 完成${this.stats.completed}, 失败${this.stats.failed}, 升级${this.stats.escalated}`);
+    }
+    async stop() {
+        this.logger.info('🛑 正在停止 Loop...');
+        this.isRunning = false;
+        // 保存最终检查点
+        await this.saveCheckpoint();
+        // 清理资源
+        await this.cleanup();
+    }
+    async getStatus() {
+        return {
+            loopStatus: this.isRunning ? 'running' : 'stopped',
+            activeTasks: this.currentTask ? 1 : 0,
+            pendingTasks: await this.taskQueue.getPendingCount(),
+            completedTasks: this.stats.completed,
+            failedTasks: this.stats.failed,
+            uptime: Date.now() - this.startTime
+        };
+    }
+    async generateTasksFromProject() {
+        try {
+            // 读取 AGENTS.md
+            const agentsMd = await this.readAgentsMd();
+            // 读取开发计划
+            const plans = await this.findDevelopmentPlans();
+            if (plans.length === 0) {
+                this.logger.warn('⚠️ 未找到开发计划，跳过任务生成');
+                return;
+            }
+            // 分析代码现状
+            const codeStatus = await this.analyzeCodebase();
+            // 根据计划和现状生成任务
+            const tasks = this.createTasksFromPlans(plans, codeStatus);
+            // 加入队列
+            for (const task of tasks) {
+                await this.taskQueue.enqueue(task);
+                this.logger.info(`📥 生成任务: ${task.title}`);
+            }
+            this.logger.info(`✅ 已生成 ${tasks.length} 个初始任务`);
+        }
+        catch (error) {
+            this.logger.error('生成任务失败:', error.message);
+        }
+    }
+    async readAgentsMd() {
+        try {
+            return await fs.readFile('AGENTS.md', 'utf-8');
+        }
+        catch {
+            return '';
+        }
+    }
+    async findDevelopmentPlans() {
+        const plansDir = 'docs/superpowers/plans';
+        const plans = [];
+        try {
+            const files = await fs.readdir(plansDir);
+            for (const file of files.filter(f => f.endsWith('.md'))) {
+                const content = await fs.readFile(path.join(plansDir, file), 'utf-8');
+                plans.push({
+                    file,
+                    content,
+                    tasks: this.extractTasksFromPlan(content)
+                });
+            }
+        }
+        catch {
+            // 目录不存在
+        }
+        return plans;
+    }
+    extractTasksFromPlan(content) {
+        const tasks = [];
+        const lines = content.split('\n');
+        for (const line of lines) {
+            // 匹配任务行: "- [ ] 任务描述" 或 "1. 任务描述"
+            const match = line.match(/^(?:\s*[-*]\s*\[\s*\]\s*|\s*\d+\.\s*)(.+)$/);
+            if (match) {
+                tasks.push({
+                    description: match[1].trim(),
+                    raw: line.trim()
+                });
+            }
+        }
+        return tasks;
+    }
+    async analyzeCodebase() {
+        const status = {
+            hasPickerAgent: false,
+            hasDesignerAgent: false,
+            hasMarketerAgent: false,
+            hasOrchestrator: false,
+            hasFrontend: false,
+            missingComponents: []
+        };
+        try {
+            const files = await fs.readdir('src/lib/ai/agents');
+            status.hasPickerAgent = files.some(f => f.toLowerCase().includes('picker'));
+            status.hasDesignerAgent = files.some(f => f.toLowerCase().includes('designer'));
+            status.hasMarketerAgent = files.some(f => f.toLowerCase().includes('marketer'));
+            status.hasOrchestrator = files.some(f => f.toLowerCase().includes('orchestrator'));
+        }
+        catch {
+            // 目录不存在
+        }
+        if (!status.hasPickerAgent)
+            status.missingComponents.push('PickerAgent');
+        if (!status.hasDesignerAgent)
+            status.missingComponents.push('DesignerAgent');
+        if (!status.hasMarketerAgent)
+            status.missingComponents.push('MarketerAgent');
+        if (!status.hasOrchestrator)
+            status.missingComponents.push('Orchestrator');
+        return status;
+    }
+    createTasksFromPlans(plans, codeStatus) {
+        const tasks = [];
+        const now = new Date();
+        // 根据缺失的组件生成任务
+        if (!codeStatus.hasPickerAgent) {
+            tasks.push({
+                id: `task-${Date.now()}-picker`,
+                title: '实现 PickerAgent 选品智能体',
+                description: '实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意',
+                requirements: [
+                    '创建 src/lib/ai/agents/PickerAgent.ts',
+                    '实现趋势数据源接口',
+                    '实现产品创意生成逻辑',
+                    '添加单元测试'
+                ],
+                priority: 'high',
+                status: 'pending',
+                maxDuration: 2 * 60 * 60 * 1000,
+                createdAt: now
+            });
+        }
+        if (!codeStatus.hasDesignerAgent) {
+            tasks.push({
+                id: `task-${Date.now()}-designer`,
+                title: '实现 DesignerAgent 设计智能体',
+                description: '实现设计Agent，生成AI图像Prompt并调用图像生成API',
+                requirements: [
+                    '创建 src/lib/ai/agents/DesignerAgent.ts',
+                    '实现图像Prompt生成',
+                    '集成图像生成API',
+                    '添加设计模板'
+                ],
+                priority: 'high',
+                status: 'pending',
+                maxDuration: 2 * 60 * 60 * 1000,
+                createdAt: now
+            });
+        }
+        if (!codeStatus.hasMarketerAgent) {
+            tasks.push({
+                id: `task-${Date.now()}-marketer`,
+                title: '实现 MarketerAgent 营销智能体',
+                description: '实现营销Agent，生成商品文案、SEO优化、广告素材',
+                requirements: [
+                    '创建 src/lib/ai/agents/MarketerAgent.ts',
+                    '实现商品描述生成',
+                    '实现SEO关键词优化',
+                    '生成社交媒体文案'
+                ],
+                priority: 'medium',
+                status: 'pending',
+                maxDuration: 2 * 60 * 60 * 1000,
+                createdAt: now
+            });
+        }
+        if (!codeStatus.hasOrchestrator) {
+            tasks.push({
+                id: `task-${Date.now()}-orchestrator`,
+                title: '实现 Orchestrator 协调器',
+                description: '实现Agent协调器，管理多Agent协作和状态流转',
+                requirements: [
+                    '创建 src/lib/ai/Orchestrator.ts',
+                    '实现Agent注册机制',
+                    '实现状态管理',
+                    '集成LangGraph'
+                ],
+                priority: 'high',
+                status: 'pending',
+                maxDuration: 2 * 60 * 60 * 1000,
+                createdAt: now
+            });
+        }
+        return tasks;
+    }
+    async executeTask(task, options) {
+        const startTime = Date.now();
+        try {
+            // 更新任务状态
+            task.status = 'running';
+            task.startedAt = new Date();
+            await this.taskQueue.update(task);
+            // 执行任务（使用 TaskExecutor）
+            const result = await this.executor.execute(task, {
+                dryRun: options.dryRun,
+                onProgress: (progress) => {
+                    this.emit('taskProgress', { task, progress });
+                }
+            });
+            // 计算执行时间
+            const duration = Date.now() - startTime;
+            return {
+                ...result,
+                duration,
+                completedAt: new Date()
+            };
+        }
+        catch (error) {
+            return {
+                status: 'failed',
+                error: error.message || String(error),
+                duration: Date.now() - startTime
+            };
+        }
+    }
+    async processResult(task, result) {
+        this.logger.info(`✅ 任务执行完成: ${task.title}`);
+        this.logger.info(`   状态: ${result.status}`);
+        this.logger.info(`   耗时: ${result.duration}ms`);
+        if (result.status === 'success') {
+            // 更新统计
+            this.stats.completed++;
+            this.recordAction(`task_complete:${task.id}`);
+            // 自动创建 PR
+            if (result.hasChanges && !result.dryRun) {
+                await this.createPR(task, result);
+            }
+            // 更新任务状态
+            task.status = 'completed';
+            task.result = result;
+            task.completedAt = new Date();
+            await this.taskQueue.update(task);
+            // 生成后续任务（如果适用）
+            await this.generateFollowUpTasks(task, result);
+            this.emit('taskCompleted', { task, result });
+        }
+        else if (result.status === 'failed') {
+            this.stats.failed++;
+            this.recordAction(`task_failed:${task.id}`);
+            // 判断是否需要升级
+            if (await this.shouldEscalate(task, result)) {
+                await this.escalateTask(task, result);
+            }
+            else if (result.canRetry && (task.retryCount || 0) < 3) {
+                // 重试
+                task.retryCount = (task.retryCount || 0) + 1;
+                task.status = 'pending';
+                task.lastError = result.error;
+                await this.taskQueue.enqueue(task);
+                this.logger.info(`🔄 任务 ${task.id} 将在 ${task.retryCount} 秒后重试`);
+                await this.sleep(task.retryCount * 1000);
+            }
+            else {
+                task.status = 'failed';
+                task.result = result;
+                await this.taskQueue.update(task);
+                // 生成修复任务
+                await this.generateFixTask(task, result);
+            }
+        }
+    }
+    async generateFollowUpTasks(completedTask, result) {
+        // 根据完成的任务生成后续任务
+        const followUpTasks = [];
+        // 如果实现了某个 Agent，可能需要添加测试任务
+        if (completedTask.title.includes('实现') && !completedTask.title.includes('测试')) {
+            const testTask = {
+                id: `task-${Date.now()}-test`,
+                title: `添加 ${completedTask.title.replace('实现', '')} 的单元测试`,
+                description: `为已完成的 ${completedTask.title} 添加完整的单元测试覆盖`,
+                requirements: [
+                    `测试 ${completedTask.title.replace('实现', '').trim()} 的核心功能`,
+                    '覆盖正常路径和边界情况',
+                    '使用适当的 mock 隔离外部依赖'
+                ],
+                priority: 'medium',
+                status: 'pending',
+                parentTask: completedTask.id,
+                maxDuration: 60 * 60 * 1000, // 1小时
+                createdAt: new Date()
+            };
+            followUpTasks.push(testTask);
+        }
+        // 如果实现了多个 Agent，生成集成任务
+        if (completedTask.title.includes('Agent')) {
+            const pendingAgents = ['DesignerAgent', 'MarketerAgent', 'Orchestrator']
+                .filter(name => !completedTask.title.includes(name));
+            if (pendingAgents.length > 0) {
+                this.logger.info(`📋 还有 ${pendingAgents.length} 个 Agent 待实现`);
+            }
+        }
+        // 加入队列
+        for (const newTask of followUpTasks) {
+            await this.taskQueue.enqueue(newTask);
+            this.logger.info(`📥 生成后续任务: ${newTask.title}`);
+        }
+    }
+    async generateFixTask(failedTask, result) {
+        // 生成修复任务
+        const fixTask = {
+            id: `task-${Date.now()}-fix`,
+            title: `修复: ${failedTask.title}`,
+            description: `修复任务执行失败的问题。\n\n原错误: ${result.error || '未知错误'}`,
+            requirements: [
+                '分析失败原因',
+                '修复根本问题',
+                '验证修复效果'
+            ],
+            priority: 'high',
+            status: 'pending',
+            parentTask: failedTask.id,
+            maxDuration: failedTask.maxDuration,
+            createdAt: new Date()
+        };
+        await this.taskQueue.enqueue(fixTask);
+        this.logger.info(`📥 生成修复任务: ${fixTask.title}`);
+    }
+    async createPR(task, result) {
+        try {
+            this.logger.info(`🔀 为任务 ${task.id} 创建 PR`);
+            const pr = await this.prAutomator.create({
+                branch: result.branch || `harness/${task.id}`,
+                title: `[Auto] ${task.title}`,
+                body: this.buildPRBody(task, result)
+            });
+            if (pr.simulated) {
+                this.logger.info(`ℹ️ PR 创建已模拟（GitHub CLI/API 不可用）`);
+                return;
+            }
+            this.logger.info(`✅ PR 创建成功: ${pr.url}`);
+            // 保存 PR 信息到任务
+            task.prUrl = pr.url;
+            task.prNumber = pr.number;
+            // 请求审查（如果 reviewer 可用）
+            try {
+                const review = await this.reviewer.review(pr.number);
+                if (review.canAutoApprove && review.status === 'approved') {
+                    await this.prAutomator.merge({ number: pr.number });
+                    this.logger.info(`✅ PR 已自动合并`);
+                    task.prMerged = true;
+                }
+                else if (review.issues.length > 0) {
+                    // 生成修复任务
+                    await this.generateReviewFixTask(task, review);
+                }
+            }
+            catch (reviewError) {
+                this.logger.warn('自动审查失败:', reviewError);
+            }
+        }
+        catch (error) {
+            this.logger.error('PR 创建失败:', error.message);
+            // PR 创建失败不中断流程
+        }
+    }
+    buildPRBody(task, result) {
+        const sections = [
+            `## 🤖 Harness 自动生成的 PR`,
+            '',
+            `**任务:** ${task.title}`,
+            `**任务 ID:** ${task.id}`,
+            `**执行时间:** ${Math.round(result.duration / 1000)}s`,
+            '',
+            `### 📋 执行计划`,
+            result.plan?.steps?.map((s, i) => `${i + 1}. ${s.type}: ${s.description}`).join('\n') || 'N/A',
+            '',
+            `### 📝 变更摘要`,
+            result.summary || '完成代码生成和文件修改',
+            '',
+            `---`,
+            `*由 Harness-Engineering 自动生成*`
+        ];
+        return sections.join('\n');
+    }
+    async generateReviewFixTask(task, review) {
+        const fixTask = {
+            id: `task-${Date.now()}-review-fix`,
+            title: `修复 PR #${task.prNumber} 的审查问题`,
+            description: `根据自动审查结果修复代码问题。\n\n审查发现的问题:\n${review.issues.map((i) => `- [${i.severity}] ${i.message}`).join('\n')}`,
+            requirements: review.suggestions,
+            priority: 'high',
+            status: 'pending',
+            parentTask: task.id,
+            prNumber: task.prNumber,
+            maxDuration: 30 * 60 * 1000, // 30分钟
+            createdAt: new Date()
+        };
+        await this.taskQueue.enqueue(fixTask);
+        this.logger.info(`📥 生成审查修复任务: ${fixTask.title}`);
+    }
+    async shouldEscalate(task, result) {
+        // 如果错误涉及架构变更或复杂重构，需要升级
+        const escalationKeywords = [
+            'architecture',
+            'breaking change',
+            'database migration',
+            'security',
+            'auth'
+        ];
+        const errorMessage = (result.error || '').toLowerCase();
+        return escalationKeywords.some(kw => errorMessage.includes(kw));
+    }
+    async escalateTask(task, result) {
+        this.stats.escalated++;
+        this.recordAction(`task_escalated:${task.id}`);
+        task.status = 'escalated';
+        task.result = result;
+        await this.taskQueue.update(task);
+        this.logger.warn(`⚠️ 任务 ${task.id} 已升级，需要人工审查`);
+        this.emit('taskEscalated', { task, result });
+        // TODO: 发送通知（Slack/Email）
+    }
+    async handleSafetyViolation(check) {
+        switch (check.action) {
+            case 'pause':
+                this.logger.warn('⏸️  Loop 已暂停');
+                await this.sleep(60000); // 暂停1分钟
+                break;
+            case 'stop':
+                this.logger.error('🛑 安全问题严重，停止 Loop');
+                this.isRunning = false;
+                break;
+            default:
+                this.logger.warn('⚠️  未知安全操作:', check.action);
+        }
+    }
+    async handleLoopError(error) {
+        this.logger.error('Loop 错误:', error);
+        // 保存错误状态
+        await this.stateManager.saveError({
+            timestamp: new Date(),
+            error: error.message || String(error),
+            stack: error.stack
+        });
+        // 短暂休眠，避免快速重试
+        await this.sleep(5000);
+    }
+    shouldStop(maxDuration) {
+        return Date.now() - this.startTime > maxDuration;
+    }
+    getContext() {
+        return {
+            startTime: this.startTime,
+            currentTask: this.currentTask,
+            stats: this.stats,
+            queueSize: this.taskQueue.getPendingCount(),
+            actionHistory: this.actionHistory,
+            errors: this.stats.failed,
+            totalAttempts: this.stats.completed + this.stats.failed + this.stats.escalated
+        };
+    }
+    recordAction(action) {
+        this.actionHistory.push(action);
+        // 只保留最近 100 个动作
+        if (this.actionHistory.length > 100) {
+            this.actionHistory = this.actionHistory.slice(-100);
+        }
+    }
+    startCheckpointTimer() {
+        setInterval(async () => {
+            await this.saveCheckpoint();
+        }, this.config.checkpoint.interval);
+    }
+    async saveCheckpoint() {
+        const checkpoint = {
+            timestamp: Date.now(),
+            currentTask: this.currentTask,
+            stats: this.stats,
+            queueState: await this.taskQueue.getState(),
+            hasGeneratedInitialTasks: this.hasGeneratedInitialTasks
+        };
+        await this.checkpointManager.save(checkpoint);
+        this.logger.debug('💾 检查点已保存');
+    }
+    async loadCheckpoint() {
+        const checkpoint = await this.checkpointManager.load();
+        if (checkpoint) {
+            this.logger.info('📂 加载检查点');
+            if (checkpoint.stats) {
+                this.stats = checkpoint.stats;
+            }
+            if (checkpoint.queueState) {
+                await this.taskQueue.restoreState(checkpoint.queueState);
+            }
+            if (checkpoint.hasGeneratedInitialTasks) {
+                this.hasGeneratedInitialTasks = checkpoint.hasGeneratedInitialTasks;
+            }
+        }
+    }
+    async cleanup() {
+        await this.taskQueue.close();
+        await this.stateManager.close();
+    }
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+exports.LoopController = LoopController;
+//# sourceMappingURL=LoopController.js.map

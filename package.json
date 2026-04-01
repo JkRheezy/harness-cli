@@ -1,0 +1,66 @@
+{
+  "name": "@harness/cli",
+  "version": "2.1.0",
+  "description": "Harness-Engineering CLI - 无人值守Agent开发项目脚手架",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "harness": "dist/cli.js",
+    "harness-create": "dist/cli.js"
+  },
+  "files": [
+    "dist/**/*",
+    "templates/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "scaffold",
+    "template",
+    "agent",
+    "ai",
+    "automation",
+    "project-generator"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/harness-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/harness-cli/issues"
+  },
+  "homepage": "https://github.com/your-org/harness-cli#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.0",
+    "glob": "^10.3.0",
+    "handlebars": "^4.7.9",
+    "inquirer": "^9.3.8",
+    "js-yaml": "^4.1.0",
+    "openai": "^4.52.0",
+    "ora": "^8.2.0",
+    "simple-git": "^3.25.0",
+    "winston": "^3.13.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.9",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

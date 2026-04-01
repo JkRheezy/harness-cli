@@ -1,0 +1,27 @@
+{
+  "name": "python",
+  "description": "Python 项目模板 - 包含完整的 Agent 协作配置",
+  "version": "1.0.0",
+  "variables": [
+    {
+      "name": "projectName",
+      "description": "项目名称",
+      "required": true
+    },
+    {
+      "name": "projectDescription",
+      "description": "项目描述",
+      "default": "A Python project"
+    },
+    {
+      "name": "author",
+      "description": "作者名称",
+      "default": ""
+    },
+    {
+      "name": "version",
+      "description": "初始版本",
+      "default": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+﻿llm:
+  provider: anthropic
+  model: kimi-for-coding
+  apiKey: sk-kimi-2mZaQf6fRT3pvQegC3ypQ9uy8gRAgbY2BCnMpwjkMrr6yakzRposNZ15QJuMPAlI
+  baseUrl: https://api.kimi.com/coding
+  maxTokens: 32768
+  temperature: 0.2
+  timeout: 30000
+safety:
+  maxExecutionTime: 3600000
+  maxErrorRate: 0.5
+  maxComplexity: 100
+checkpoint:
+  enabled: true
+  interval: 300000
+github:
+  token: ''
