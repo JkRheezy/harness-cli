@@ -12,6 +12,7 @@ export interface ReviewIssue {
     line?: number;
     message: string;
     suggestion?: string;
+    rule?: string;
 }
 export declare class ReviewAgent {
     private config;
@@ -30,6 +31,14 @@ export declare class ReviewAgent {
     private checkSecurity;
     private checkTests;
     private checkPerformance;
+    /**
+     * Run visual regression check
+     */
+    private checkVisualRegression;
+    /**
+     * Check for browser compatibility issues
+     */
+    private checkBrowserCompatibility;
     private llmReview;
     private canAutoApprove;
     private generateSummary;

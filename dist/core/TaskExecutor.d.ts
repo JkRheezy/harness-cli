@@ -26,6 +26,18 @@ export declare class TaskExecutor {
     private generatePlan;
     private executeStep;
     private validateResults;
+    /**
+     * Run browser-based validation
+     */
+    private runBrowserValidation;
+    /**
+     * Detect running dev server
+     */
+    private detectDevServer;
+    /**
+     * Check if file exists
+     */
+    private fileExists;
     private createBranch;
     private callLLM;
     private getSystemPrompt;

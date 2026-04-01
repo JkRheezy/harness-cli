@@ -42,6 +42,7 @@ const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const simple_git_1 = require("simple-git");
 const Logger_1 = require("../utils/Logger");
 const ToolRegistry_1 = require("../tools/ToolRegistry");
+const BrowserValidator_1 = require("../browser/BrowserValidator");
 class TaskExecutor {
     constructor(config, workingDir = process.cwd()) {
         this.context = [];
@@ -275,21 +276,109 @@ class TaskExecutor {
                 message: dryRun ? 'Dry run completed' : 'No code changes generated'
             };
         }
-        // 运行测试
+        // Run traditional tests
         const testResult = await this.runTests();
-        // 运行 linter
         const lintResult = await this.runLinter();
-        // 架构检查
         const archCheck = await this.checkArchitecture();
-        const success = testResult.success && lintResult.success && archCheck.success;
+        // Run browser validation for web projects
+        const browserValidation = await this.runBrowserValidation(task);
+        const success = testResult.success &&
+            lintResult.success &&
+            archCheck.success &&
+            (browserValidation?.success ?? true);
         return {
             success,
             hasChanges: true,
             testResult,
             lintResult,
             archCheck,
+            browserValidation,
             canAutoFix: !success && this.canAutoFix(testResult, lintResult)
         };
+    }
+    /**
+     * Run browser-based validation
+     */
+    async runBrowserValidation(task) {
+        const hasPackageJson = await this.fileExists('package.json');
+        if (!hasPackageJson) {
+            this.logger.info('📦 No package.json found, skipping browser validation');
+            return null;
+        }
+        const hasNextConfig = await this.fileExists('next.config.js') ||
+            await this.fileExists('next.config.ts') ||
+            await this.fileExists('next.config.mjs');
+        if (!hasNextConfig) {
+            this.logger.info('🌐 Not a Next.js app, skipping browser validation');
+            return null;
+        }
+        this.logger.info('🌐 Starting browser validation...');
+        const validator = new BrowserValidator_1.BrowserValidator();
+        try {
+            const devServerUrl = await this.detectDevServer();
+            if (!devServerUrl) {
+                this.logger.warn('⚠️ Dev server not detected, skipping browser validation');
+                return null;
+            }
+            const result = await validator.validate({
+                url: devServerUrl,
+                takeScreenshot: true,
+                checkAccessibility: true,
+                checkPerformance: true,
+                expectedSelectors: task.expectedSelectors || [],
+                expectedText: task.expectedText || []
+            });
+            this.logger.info(`✅ Browser validation: ${result.success ? 'PASSED' : 'FAILED'}`);
+            if (result.consoleErrors.length > 0) {
+                this.logger.warn(`⚠️ ${result.consoleErrors.length} console errors`);
+            }
+            if (result.accessibilityIssues.length > 0) {
+                this.logger.warn(`⚠️ ${result.accessibilityIssues.length} accessibility issues`);
+            }
+            if (result.performanceMetrics) {
+                this.logger.info(`⏱️  Load time: ${result.performanceMetrics.loadTime}ms`);
+            }
+            return result;
+        }
+        catch (error) {
+            this.logger.error('❌ Browser validation failed:', error.message);
+            return null;
+        }
+    }
+    /**
+     * Detect running dev server
+     */
+    async detectDevServer() {
+        const ports = [3000, 3001, 5173, 5174, 8080];
+        for (const port of ports) {
+            try {
+                const response = await fetch(`http://localhost:${port}`, {
+                    method: 'HEAD',
+                    signal: AbortSignal.timeout(2000)
+                });
+                if (response.ok) {
+                    this.logger.info(`🌐 Dev server detected on port ${port}`);
+                    return `http://localhost:${port}`;
+                }
+            }
+            catch {
+                // Port not available, try next
+            }
+        }
+        return null;
+    }
+    /**
+     * Check if file exists
+     */
+    async fileExists(filePath) {
+        try {
+            const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
+            await fs.access(filePath);
+            return true;
+        }
+        catch {
+            return false;
+        }
     }
     async createBranch(task) {
         const branchName = `harness/${task.id}`;
