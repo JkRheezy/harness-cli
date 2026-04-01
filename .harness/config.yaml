@@ -1,9 +1,7 @@
-﻿# Harness-Engineering 生产环境配置
-
-llm:
-  provider: kimi
+﻿llm:
+  provider: openai
   model: kimi-for-coding
-  apiKey: ${KIMI_API_KEY}
+  apiKey: sk-kimi-2mZaQf6fRT3pvQegC3ypQ9uy8gRAgbY2BCnMpwjkMrr6yakzRposNZ15QJuMPAlI
   baseUrl: https://api.kimi.com/coding
   maxTokens: 128000
   temperature: 0.2
@@ -19,4 +17,4 @@ checkpoint:
   interval: 300000
 
 github:
-  token: ${GITHUB_TOKEN}
+  token: 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
