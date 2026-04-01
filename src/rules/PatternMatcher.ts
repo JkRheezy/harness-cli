@@ -20,7 +20,7 @@ export interface PatternDefinition {
  */
 export function extractPatternFromContent(content: string): PatternDefinition | null {
   // Find YAML code block with regex: /```ya?ml\n([\s\S]*?)```/
-  const yamlBlockRegex = /```ya?ml\n([\s\S]*?)```/;
+  const yamlBlockRegex = /```ya?ml\s*\n([\s\S]*?)```/;
   const match = content.match(yamlBlockRegex);
   
   if (!match) {
@@ -91,8 +91,8 @@ export function extractPatternFromContent(content: string): PatternDefinition | 
     message,
   };
   
-  // Only add fix if we found any fix fields
-  if (Object.keys(fix).length > 0) {
+  // Only return fix if at least one property is actually set
+  if (fix.instruction || fix.replacement || fix.example_before || fix.example_after) {
     result.fix = fix;
   }
   
@@ -121,8 +121,8 @@ export function matchPattern(rule: Rule, context: RuleContext): RuleViolation[] 
   let regex: RegExp;
   try {
     regex = new RegExp(patternDef.pattern, 'g');
-  } catch (e) {
-    // Invalid regex pattern
+  } catch (error) {
+    console.warn(`[PatternMatcher] Invalid regex in rule "${rule.id}": ${patternDef.pattern}`);
     return violations;
   }
   
@@ -242,8 +242,8 @@ function globToRegex(pattern: string): RegExp {
     .replace(/\*\*\//g, '{{GLOBSTAR_SLASH}}')  // **/ placeholder
     .replace(/\*\*/g, '{{GLOBSTAR}}');          // ** placeholder
   
-  // Escape dots for regex (do this before handling single *)
-  regexPattern = regexPattern.replace(/\./g, '\\.');
+  // Escape regex special characters (do this before handling single *, but not {} which are used in placeholders)
+  regexPattern = regexPattern.replace(/[.+?^$()|[\]\\]/g, '\\$&');
   
   // Handle single * (match within single directory level)
   regexPattern = regexPattern.replace(/\*/g, '[^/]*');
