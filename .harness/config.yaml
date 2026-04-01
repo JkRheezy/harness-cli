@@ -1,27 +1,22 @@
 ﻿# Harness-Engineering 生产环境配置
-# 版本: 2.1.0
 
-# LLM 配置 - 使用 Kimi API (通过 Anthropic 兼容接口)
 llm:
-  provider: anthropic
+  provider: kimi
   model: kimi-for-coding
   apiKey: ${KIMI_API_KEY}
   baseUrl: https://api.kimi.com/coding
   maxTokens: 128000
   temperature: 0.2
-  timeout: 300000  # 5分钟
+  timeout: 300000
 
-# 安全边界配置
 safety:
-  maxExecutionTime: 21600000  # 6小时
+  maxExecutionTime: 21600000
   maxErrorRate: 0.5
   maxComplexity: 100
 
-# 检查点配置
 checkpoint:
   enabled: true
-  interval: 300000  # 5分钟
+  interval: 300000
 
-# GitHub 配置
 github:
   token: ${GITHUB_TOKEN}
