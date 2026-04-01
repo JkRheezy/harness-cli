@@ -18,6 +18,7 @@ export interface ReviewIssue {
   line?: number;
   message: string;
   suggestion?: string;
+  rule?: string;
 }
 
 export class ReviewAgent {
@@ -146,6 +147,14 @@ export class ReviewAgent {
     // 5. 性能检查
     const perfIssues = await this.checkPerformance(prNumber);
     issues.push(...perfIssues);
+
+    // 6. 视觉回归检查
+    const visualIssues = await this.checkVisualRegression(prNumber);
+    issues.push(...visualIssues);
+
+    // 7. 浏览器兼容性检查
+    const compatIssues = await this.checkBrowserCompatibility(prNumber);
+    issues.push(...compatIssues);
     
     return {
       status: issues.length === 0 ? 'approved' : 'changes_requested',
@@ -313,6 +322,69 @@ export class ReviewAgent {
       this.logger.warn('性能检查失败:', error);
     }
     
+    return issues;
+  }
+
+  /**
+   * Run visual regression check
+   */
+  private async checkVisualRegression(prNumber: number): Promise<ReviewIssue[]> {
+    const issues: ReviewIssue[] = [];
+    
+    this.logger.info('🖼️  Checking visual regression...');
+
+    try {
+      const result = await this.runCommand(`gh pr view ${prNumber} --json files`);
+      const files = JSON.parse(result.stdout).files || [];
+      
+      const screenshotFiles = files.filter((f: any) => 
+        f.path.includes('screenshot') || 
+        f.path.endsWith('.png') || 
+        f.path.endsWith('.jpg')
+      );
+
+      if (screenshotFiles.length === 0) {
+        issues.push({
+          severity: 'info',
+          rule: 'visual-testing',
+          message: 'No visual regression screenshots found in PR'
+        });
+      }
+    } catch (error) {
+      this.logger.warn('Could not check visual regression:', error);
+    }
+
+    return issues;
+  }
+
+  /**
+   * Check for browser compatibility issues
+   */
+  private async checkBrowserCompatibility(prNumber: number): Promise<ReviewIssue[]> {
+    const issues: ReviewIssue[] = [];
+    
+    this.logger.info('🌐 Checking browser compatibility...');
+
+    try {
+      const result = await this.runCommand(`gh pr diff ${prNumber} --name-only`);
+      const files = result.stdout.split('\n').filter(f => f.endsWith('.css') || f.endsWith('.scss'));
+
+      for (const file of files) {
+        const content = await this.getFileContent(file);
+        
+        if (content.includes('appearance:') && !content.includes('-webkit-appearance')) {
+          issues.push({
+            severity: 'warning',
+            rule: 'browser-compat',
+            file,
+            message: 'CSS property may need vendor prefixes for cross-browser support'
+          });
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Could not check browser compatibility:', error);
+    }
+
     return issues;
   }
 
