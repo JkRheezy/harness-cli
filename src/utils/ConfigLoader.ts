@@ -24,6 +24,7 @@ export interface HarnessConfig {
   github: {
     token: string;
   };
+  projectPath?: string;
 }
 
 export class ConfigLoader {
@@ -70,7 +71,8 @@ export class ConfigLoader {
       llm: { ...defaults.llm, ...overrides.llm },
       safety: { ...defaults.safety, ...overrides.safety },
       checkpoint: { ...defaults.checkpoint, ...overrides.checkpoint },
-      github: { ...defaults.github, ...overrides.github }
+      github: { ...defaults.github, ...overrides.github },
+      projectPath: overrides.projectPath || defaults.projectPath
     };
     
     // 替换环境变量占位符 ${ENV_VAR}

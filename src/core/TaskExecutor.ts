@@ -27,11 +27,13 @@ export class TaskExecutor {
   private toolRegistry: ToolRegistry;
   private logger: Logger;
   private context: any[] = [];
+  private workingDir: string;
 
-  constructor(config: LLMConfig) {
+  constructor(config: LLMConfig, workingDir: string = process.cwd()) {
     this.config = config;
+    this.workingDir = workingDir;
     this.logger = new Logger();
-    this.git = simpleGit();
+    this.git = simpleGit(workingDir);
     this.toolRegistry = new ToolRegistry();
     
     // 初始化 LLM 客户端
@@ -556,36 +558,57 @@ Requirements:
 - Include proper error handling
 - Add TypeScript types
 - Include comments for complex logic
+
+IMPORTANT: Return ONLY the code content, wrapped in a markdown code block. Do NOT return JSON, tool calls, or any other format.
+Example:
+\`\`\`typescript
+// Your code here
+\`\`\`
 `;
     
-    return await this.callLLM(prompt);
+    const response = await this.callLLM(prompt);
+    
+    // Extract code from markdown code block
+    const codeBlockMatch = response.match(/```(?:\w+)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      return codeBlockMatch[1].trim();
+    }
+    
+    // If no code block found, return the response as-is
+    return response.trim();
   }
 
   // 文件操作
-  private async readFile(path: string): Promise<string> {
+  private async readFile(filePath: string): Promise<string> {
     const fs = await import('fs/promises');
+    const pathModule = await import('path');
+    const fullPath = pathModule.join(this.workingDir, filePath);
+    
     try {
-      return await fs.readFile(path, 'utf-8');
+      return await fs.readFile(fullPath, 'utf-8');
     } catch (error) {
       return '';
     }
   }
 
-  private async writeFile(path: string, content: string): Promise<void> {
+  private async writeFile(filePath: string, content: string): Promise<void> {
     if (process.env.DRY_RUN === 'true') {
-      this.logger.info(`[DRY RUN] Would write to ${path}`);
+      this.logger.info(`[DRY RUN] Would write to ${filePath}`);
       return;
     }
     
     const fs = await import('fs/promises');
     const pathModule = await import('path');
     
+    // 构建完整路径
+    const fullPath = pathModule.join(this.workingDir, filePath);
+    
     // 确保目录存在
-    const dir = pathModule.dirname(path);
+    const dir = pathModule.dirname(fullPath);
     await fs.mkdir(dir, { recursive: true });
     
-    await fs.writeFile(path, content, 'utf-8');
-    this.logger.info(`✏️  写入文件: ${path}`);
+    await fs.writeFile(fullPath, content, 'utf-8');
+    this.logger.info(`✏️  写入文件: ${filePath}`);
   }
 
   private async editFile(path: string, oldString: string, newString: string): Promise<void> {

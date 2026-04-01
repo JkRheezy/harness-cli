@@ -18,6 +18,7 @@ export interface LoopConfig {
         enabled: boolean;
         interval: number;
     };
+    projectPath?: string;
 }
 export interface LoopOptions {
     maxDuration: number;

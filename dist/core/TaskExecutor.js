@@ -43,11 +43,12 @@ const simple_git_1 = require("simple-git");
 const Logger_1 = require("../utils/Logger");
 const ToolRegistry_1 = require("../tools/ToolRegistry");
 class TaskExecutor {
-    constructor(config) {
+    constructor(config, workingDir = process.cwd()) {
         this.context = [];
         this.config = config;
+        this.workingDir = workingDir;
         this.logger = new Logger_1.Logger();
-        this.git = (0, simple_git_1.simpleGit)();
+        this.git = (0, simple_git_1.simpleGit)(workingDir);
         this.toolRegistry = new ToolRegistry_1.ToolRegistry();
         // 初始化 LLM 客户端
         if (config.provider === 'openai' || config.provider === 'kimi') {
@@ -498,31 +499,48 @@ Requirements:
 - Include proper error handling
 - Add TypeScript types
 - Include comments for complex logic
+
+IMPORTANT: Return ONLY the code content, wrapped in a markdown code block. Do NOT return JSON, tool calls, or any other format.
+Example:
+\`\`\`typescript
+// Your code here
+\`\`\`
 `;
-        return await this.callLLM(prompt);
+        const response = await this.callLLM(prompt);
+        // Extract code from markdown code block
+        const codeBlockMatch = response.match(/```(?:\w+)?\s*([\s\S]*?)```/);
+        if (codeBlockMatch) {
+            return codeBlockMatch[1].trim();
+        }
+        // If no code block found, return the response as-is
+        return response.trim();
     }
     // 文件操作
-    async readFile(path) {
+    async readFile(filePath) {
         const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
+        const pathModule = await Promise.resolve().then(() => __importStar(require('path')));
+        const fullPath = pathModule.join(this.workingDir, filePath);
         try {
-            return await fs.readFile(path, 'utf-8');
+            return await fs.readFile(fullPath, 'utf-8');
         }
         catch (error) {
             return '';
         }
     }
-    async writeFile(path, content) {
+    async writeFile(filePath, content) {
         if (process.env.DRY_RUN === 'true') {
-            this.logger.info(`[DRY RUN] Would write to ${path}`);
+            this.logger.info(`[DRY RUN] Would write to ${filePath}`);
             return;
         }
         const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
         const pathModule = await Promise.resolve().then(() => __importStar(require('path')));
+        // 构建完整路径
+        const fullPath = pathModule.join(this.workingDir, filePath);
         // 确保目录存在
-        const dir = pathModule.dirname(path);
+        const dir = pathModule.dirname(fullPath);
         await fs.mkdir(dir, { recursive: true });
-        await fs.writeFile(path, content, 'utf-8');
-        this.logger.info(`✏️  写入文件: ${path}`);
+        await fs.writeFile(fullPath, content, 'utf-8');
+        this.logger.info(`✏️  写入文件: ${filePath}`);
     }
     async editFile(path, oldString, newString) {
         if (process.env.DRY_RUN === 'true') {

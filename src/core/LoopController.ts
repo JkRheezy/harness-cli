@@ -29,6 +29,7 @@ export interface LoopConfig {
     enabled: boolean;
     interval: number;
   };
+  projectPath?: string;
 }
 
 export interface LoopOptions {
@@ -63,8 +64,12 @@ export class LoopController extends EventEmitter {
     this.config = config;
     this.logger = new Logger();
     
+    // 确定工作目录
+    const workingDir = config.projectPath || process.cwd();
+    this.logger.info(`📁 Working directory: ${workingDir}`);
+    
     this.taskQueue = new TaskQueue();
-    this.executor = new TaskExecutor(config.llm);
+    this.executor = new TaskExecutor(config.llm, workingDir);
     this.reviewer = new ReviewAgent(config.llm);
     this.prAutomator = new PRAutomator();
     this.stateManager = new StateManager();

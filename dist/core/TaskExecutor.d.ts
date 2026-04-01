@@ -19,7 +19,8 @@ export declare class TaskExecutor {
     private toolRegistry;
     private logger;
     private context;
-    constructor(config: LLMConfig);
+    private workingDir;
+    constructor(config: LLMConfig, workingDir?: string);
     execute(task: any, options?: ExecuteOptions): Promise<any>;
     private prepareContext;
     private generatePlan;

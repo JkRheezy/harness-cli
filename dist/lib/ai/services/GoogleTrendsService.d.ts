@@ -1,0 +1,1 @@
+//# sourceMappingURL=GoogleTrendsService.d.ts.map

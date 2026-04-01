@@ -1,7 +1,7 @@
 {
-  "timestamp": 1775022765589,
+  "timestamp": 1775057926124,
   "currentTask": {
-    "id": "task-1775015565430-picker",
+    "id": "task-1775023427999-picker",
     "title": "实现 PickerAgent 选品智能体",
     "description": "实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意",
     "requirements": [
@@ -13,14 +13,14 @@
     "priority": "high",
     "status": "failed",
     "maxDuration": 7200000,
-    "createdAt": "2026-04-01T03:52:45.430Z",
-    "startedAt": "2026-04-01T03:52:45.431Z",
+    "createdAt": "2026-04-01T06:03:47.999Z",
+    "startedAt": "2026-04-01T06:03:48.000Z",
     "result": {
       "status": "failed",
-      "error": "Pushing to origin\nfatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.\n",
+      "error": "fatal: unable to access 'https://github.com/JkRheezy/pin-ecommerce.git/': Recv failure: Connection was reset\nPushing to https://github.com/JkRheezy/pin-ecommerce.git\n",
       "canRetry": false,
-      "duration": 6390,
-      "completedAt": "2026-04-01T03:52:51.821Z"
+      "duration": 577323,
+      "completedAt": "2026-04-01T06:13:25.323Z"
     }
   },
   "stats": {
@@ -31,7 +31,7 @@
   "queueState": {
     "queue": [
       {
-        "id": "task-1775015565430-designer",
+        "id": "task-1775023427999-designer",
         "title": "实现 DesignerAgent 设计智能体",
         "description": "实现设计Agent，生成AI图像Prompt并调用图像生成API",
         "requirements": [
@@ -43,10 +43,10 @@
         "priority": "high",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-01T03:52:45.430Z"
+        "createdAt": "2026-04-01T06:03:47.999Z"
       },
       {
-        "id": "task-1775015565430-orchestrator",
+        "id": "task-1775023427999-orchestrator",
         "title": "实现 Orchestrator 协调器",
         "description": "实现Agent协调器，管理多Agent协作和状态流转",
         "requirements": [
@@ -58,10 +58,10 @@
         "priority": "high",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-01T03:52:45.430Z"
+        "createdAt": "2026-04-01T06:03:47.999Z"
       },
       {
-        "id": "task-1775015565430-marketer",
+        "id": "task-1775023427999-marketer",
         "title": "实现 MarketerAgent 营销智能体",
         "description": "实现营销Agent，生成商品文案、SEO优化、广告素材",
         "requirements": [
@@ -73,12 +73,12 @@
         "priority": "medium",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-01T03:52:45.430Z"
+        "createdAt": "2026-04-01T06:03:47.999Z"
       },
       {
-        "id": "task-1775015571821-fix",
+        "id": "task-1775024005324-fix",
         "title": "修复: 实现 PickerAgent 选品智能体",
-        "description": "修复任务执行失败的问题。\n\n原错误: Pushing to origin\nfatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.\n",
+        "description": "修复任务执行失败的问题。\n\n原错误: fatal: unable to access 'https://github.com/JkRheezy/pin-ecommerce.git/': Recv failure: Connection was reset\nPushing to https://github.com/JkRheezy/pin-ecommerce.git\n",
         "requirements": [
           "分析失败原因",
           "修复根本问题",
@@ -86,9 +86,9 @@
         ],
         "priority": "high",
         "status": "pending",
-        "parentTask": "task-1775015565430-picker",
+        "parentTask": "task-1775023427999-picker",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-01T03:52:51.821Z"
+        "createdAt": "2026-04-01T06:13:25.324Z"
       }
     ],
     "activeTasks": []

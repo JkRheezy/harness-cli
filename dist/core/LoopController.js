@@ -60,8 +60,11 @@ class LoopController extends events_1.EventEmitter {
         this.hasGeneratedInitialTasks = false;
         this.config = config;
         this.logger = new Logger_1.Logger();
+        // 确定工作目录
+        const workingDir = config.projectPath || process.cwd();
+        this.logger.info(`📁 Working directory: ${workingDir}`);
         this.taskQueue = new TaskQueue_1.TaskQueue();
-        this.executor = new TaskExecutor_1.TaskExecutor(config.llm);
+        this.executor = new TaskExecutor_1.TaskExecutor(config.llm, workingDir);
         this.reviewer = new ReviewAgent_1.ReviewAgent(config.llm);
         this.prAutomator = new PRAutomator_1.PRAutomator();
         this.stateManager = new StateManager_1.StateManager();

@@ -20,6 +20,7 @@ export interface HarnessConfig {
     github: {
         token: string;
     };
+    projectPath?: string;
 }
 export declare class ConfigLoader {
     static load(configPath: string): Promise<HarnessConfig>;
