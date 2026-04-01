@@ -1,28 +1,6 @@
 {
-  "timestamp": 1775057926124,
-  "currentTask": {
-    "id": "task-1775023427999-picker",
-    "title": "实现 PickerAgent 选品智能体",
-    "description": "实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意",
-    "requirements": [
-      "创建 src/lib/ai/agents/PickerAgent.ts",
-      "实现趋势数据源接口",
-      "实现产品创意生成逻辑",
-      "添加单元测试"
-    ],
-    "priority": "high",
-    "status": "failed",
-    "maxDuration": 7200000,
-    "createdAt": "2026-04-01T06:03:47.999Z",
-    "startedAt": "2026-04-01T06:03:48.000Z",
-    "result": {
-      "status": "failed",
-      "error": "fatal: unable to access 'https://github.com/JkRheezy/pin-ecommerce.git/': Recv failure: Connection was reset\nPushing to https://github.com/JkRheezy/pin-ecommerce.git\n",
-      "canRetry": false,
-      "duration": 577323,
-      "completedAt": "2026-04-01T06:13:25.323Z"
-    }
-  },
+  "timestamp": 1775065846159,
+  "currentTask": null,
   "stats": {
     "completed": 0,
     "failed": 1,

@@ -16,7 +16,8 @@ class BrowserAgent {
         const browserLauncher = { chromium: playwright_1.chromium, firefox: playwright_1.firefox, webkit: playwright_1.webkit }[browserType];
         this.browser = await browserLauncher.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            channel: browserType === 'chromium' ? 'chrome' : undefined
         });
         this.page = await this.browser.newPage();
         await this.page.setViewportSize({ width: 1280, height: 720 });

@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { EvolutionConfig, BusinessContext } from '../evolution/types';
 export interface LoopConfig {
     llm: {
         provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -19,6 +20,7 @@ export interface LoopConfig {
         interval: number;
     };
     projectPath?: string;
+    evolution?: EvolutionConfig;
 }
 export interface LoopOptions {
     maxDuration: number;
@@ -44,6 +46,9 @@ export declare class LoopController extends EventEmitter {
     private prWorkflow;
     private errorHandler;
     private enableSuperpowers;
+    private autoEvolution;
+    private evolutionConfig;
+    private businessContext?;
     constructor(config: LoopConfig);
     start(options: LoopOptions): Promise<void>;
     stop(): Promise<void>;
@@ -75,5 +80,9 @@ export declare class LoopController extends EventEmitter {
     private cleanup;
     private sleep;
     private isFatalError;
+    /**
+     * Set business context for evolution analysis
+     */
+    setBusinessContext(context: BusinessContext): void;
 }
 //# sourceMappingURL=LoopController.d.ts.map

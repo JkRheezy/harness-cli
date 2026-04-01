@@ -36,6 +36,17 @@ class ConfigLoader {
                 autoDesign: true,
                 requireApproval: false,
                 skillsPath: '.config/agents/skills'
+            },
+            evolution: {
+                enabled: true,
+                checkInterval: 300000,
+                maxOpportunitiesPerAnalysis: 5,
+                minImpactThreshold: 5,
+                categories: {
+                    technical: true,
+                    business: true,
+                    ux: true
+                }
             }
         };
         // 尝试读取配置文件
@@ -58,6 +69,21 @@ class ConfigLoader {
             github: { ...defaults.github, ...overrides.github },
             projectPath: overrides.projectPath || defaults.projectPath
         };
+        // Merge evolution config if provided
+        if (overrides.evolution) {
+            merged.evolution = {
+                ...defaults.evolution,
+                ...overrides.evolution,
+                categories: {
+                    ...defaults.evolution?.categories,
+                    ...overrides.evolution.categories
+                }
+            };
+        }
+        // Merge business context if provided
+        if (overrides.businessContext) {
+            merged.businessContext = overrides.businessContext;
+        }
         // 替换环境变量占位符 ${ENV_VAR}
         this.resolveEnvVariables(merged);
         return merged;
@@ -115,6 +141,33 @@ checkpoint:
 # GitHub 配置
 github:
   token: \${GITHUB_TOKEN}  # 从环境变量读取
+
+# Auto-evolution configuration
+evolution:
+  enabled: true
+  checkInterval: 300000
+  maxOpportunitiesPerAnalysis: 5
+  minImpactThreshold: 5
+  categories:
+    technical: true
+    business: true
+    ux: true
+
+# Business context for feature analysis (optional)
+businessContext:
+  domain: ecommerce
+  currentFeatures:
+    - product catalog
+    - shopping cart
+  userFlows:
+    - name: Purchase Flow
+      steps:
+        - browse
+        - cart
+        - checkout
+      entryPoints:
+        - homepage
+      conversionGoal: purchase completed
 `;
         await fs_1.promises.writeFile(configPath, defaultConfig, 'utf-8');
         console.log(`✅ 默认配置已创建: ${configPath}`);

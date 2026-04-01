@@ -48,6 +48,7 @@ const path = __importStar(require("path"));
 const DesignPhase_1 = require("./DesignPhase");
 const PRWorkflow_1 = require("./PRWorkflow");
 const ResilientLoop_1 = require("./ResilientLoop");
+const AutoEvolution_1 = require("../evolution/AutoEvolution");
 class LoopController extends events_1.EventEmitter {
     constructor(config) {
         super();
@@ -78,6 +79,19 @@ class LoopController extends events_1.EventEmitter {
         this.designPhase = new DesignPhase_1.DesignPhase(true);
         this.prWorkflow = new PRWorkflow_1.PRWorkflow();
         this.errorHandler = new ResilientLoop_1.ResilientErrorHandler(3);
+        // Initialize auto-evolution
+        this.evolutionConfig = config.evolution || {
+            enabled: true,
+            checkInterval: 300000,
+            maxOpportunitiesPerAnalysis: 5,
+            minImpactThreshold: 5,
+            categories: {
+                technical: true,
+                business: true,
+                ux: true
+            }
+        };
+        this.autoEvolution = new AutoEvolution_1.AutoEvolution(this.evolutionConfig, this.taskQueue);
     }
     async start(options) {
         this.isRunning = true;
@@ -116,8 +130,15 @@ class LoopController extends events_1.EventEmitter {
                         this.hasGeneratedInitialTasks = true;
                         continue;
                     }
-                    // 无任务，短暂休眠
-                    await this.sleep(1000);
+                    // Auto-evolution: when queue is empty and initial tasks done
+                    if (this.evolutionConfig.enabled) {
+                        const evolved = await this.autoEvolution.trigger('queue_empty', this.config.projectPath || process.cwd(), this.businessContext);
+                        if (evolved) {
+                            continue;
+                        }
+                    }
+                    this.logger.info('✨ 所有任务完成，队列为空，等待新任务...');
+                    await this.sleep(5000);
                     continue;
                 }
                 this.logger.info(`📋 开始执行任务: ${this.currentTask.title}`);
@@ -126,6 +147,10 @@ class LoopController extends events_1.EventEmitter {
                 const result = await this.executeTask(this.currentTask, options);
                 // 处理结果
                 await this.processResult(this.currentTask, result);
+                // Periodic auto-evolution check
+                if (this.stats.completed > 0 && this.stats.completed % 5 === 0) {
+                    await this.autoEvolution.trigger('periodic_check', this.config.projectPath || process.cwd(), this.businessContext);
+                }
             }
             catch (error) {
                 this.logger.error('Loop 执行错误:', error);
@@ -757,6 +782,13 @@ class LoopController extends events_1.EventEmitter {
         ];
         const errorMessage = error.message || String(error);
         return fatalPatterns.some(p => errorMessage.includes(p));
+    }
+    /**
+     * Set business context for evolution analysis
+     */
+    setBusinessContext(context) {
+        this.businessContext = context;
+        this.logger.info(`💼 Business context set: ${context.domain}`);
     }
 }
 exports.LoopController = LoopController;

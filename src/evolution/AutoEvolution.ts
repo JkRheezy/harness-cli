@@ -8,7 +8,7 @@ import {
   TaskCategory
 } from './types';
 
-export interface Task {
+export interface EvolutionTask {
   id: string;
   title: string;
   description: string;
@@ -73,7 +73,7 @@ export class AutoEvolution {
       const tasks = opportunities.map(opp => this.convertToTask(opp));
 
       for (const task of tasks) {
-        await this.taskQueue.enqueue(task);
+        await this.taskQueue.enqueue(task as any);
         this.logger.info(`📥 Auto-generated task: ${task.title}`);
       }
 
@@ -86,7 +86,7 @@ export class AutoEvolution {
     }
   }
 
-  private convertToTask(opportunity: EvolutionOpportunity): Task {
+  private convertToTask(opportunity: EvolutionOpportunity): EvolutionTask {
     return {
       id: opportunity.id,
       title: opportunity.title,

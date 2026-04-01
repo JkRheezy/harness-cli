@@ -15,6 +15,7 @@ import { ResilientErrorHandler } from './ResilientLoop';
 import { DesignResult, PRWorkflowResult } from '../types/superpowers';
 import { AutoEvolution } from '../evolution/AutoEvolution';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
+import { EvolutionTask } from '../evolution/AutoEvolution';
 
 export interface LoopConfig {
   llm: {
@@ -36,6 +37,7 @@ export interface LoopConfig {
     interval: number;
   };
   projectPath?: string;
+  evolution?: EvolutionConfig;
 }
 
 export interface LoopOptions {
@@ -160,7 +162,7 @@ export class LoopController extends EventEmitter {
           if (this.evolutionConfig.enabled) {
             const evolved = await this.autoEvolution.trigger(
               'queue_empty',
-              this.projectPath,
+              this.config.projectPath || process.cwd(),
               this.businessContext
             );
             if (evolved) {
@@ -186,7 +188,7 @@ export class LoopController extends EventEmitter {
         if (this.stats.completed > 0 && this.stats.completed % 5 === 0) {
           await this.autoEvolution.trigger(
             'periodic_check',
-            this.projectPath,
+            this.config.projectPath || process.cwd(),
             this.businessContext
           );
         }

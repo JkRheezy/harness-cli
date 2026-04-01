@@ -1,3 +1,4 @@
+import { EvolutionConfig, BusinessContext } from '../evolution/types';
 export interface HarnessConfig {
     llm: {
         provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -27,6 +28,8 @@ export interface HarnessConfig {
         skillsPath: string;
     };
     projectPath?: string;
+    evolution?: EvolutionConfig;
+    businessContext?: BusinessContext;
 }
 export declare class ConfigLoader {
     static load(configPath: string): Promise<HarnessConfig>;

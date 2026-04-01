@@ -1,0 +1,1 @@
+{"version":3,"file":"BusinessAnalyzer.d.ts","sourceRoot":"","sources":["../../../src/evolution/analyzers/BusinessAnalyzer.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,oBAAoB,EAAE,eAAe,EAA0B,MAAM,UAAU,CAAC;AAKzF,qBAAa,gBAAgB;IAC3B,OAAO,CAAC,MAAM,CAAS;;IAMjB,OAAO,CACX,WAAW,EAAE,MAAM,EACnB,OAAO,EAAE,eAAe,GACvB,OAAO,CAAC,oBAAoB,EAAE,CAAC;YAyBpB,gBAAgB;YAoDhB,eAAe;YAoDf,yBAAyB;CAmExC"}

@@ -3,7 +3,7 @@ export interface Task {
     title: string;
     description: string;
     requirements?: string[];
-    priority: 'low' | 'medium' | 'high';
+    priority: 'low' | 'medium' | 'high' | 'critical';
     status: 'pending' | 'running' | 'completed' | 'failed' | 'escalated';
     maxDuration: number;
     retryCount?: number;

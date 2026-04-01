@@ -64,7 +64,7 @@ class TaskQueue {
         this.activeTasks.clear();
     }
     sortByPriority() {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
         this.queue.sort((a, b) => {
             // 首先按优先级排序
             const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];

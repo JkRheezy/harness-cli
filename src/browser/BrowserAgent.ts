@@ -29,8 +29,9 @@ export class BrowserAgent {
     
     this.browser = await browserLauncher.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      channel: browserType === 'chromium' ? 'chrome' : undefined
+    } as any);
     
     this.page = await this.browser.newPage();
     await this.page.setViewportSize({ width: 1280, height: 720 });
