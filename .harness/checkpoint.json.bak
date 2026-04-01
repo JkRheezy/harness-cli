@@ -1,0 +1,14 @@
+{
+  "timestamp": 1775015149155,
+  "currentTask": null,
+  "stats": {
+    "completed": 0,
+    "failed": 0,
+    "escalated": 0
+  },
+  "queueState": {
+    "queue": [],
+    "activeTasks": []
+  },
+  "hasGeneratedInitialTasks": true
+}

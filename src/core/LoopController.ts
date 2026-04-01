@@ -172,16 +172,19 @@ export class LoopController extends EventEmitter {
       // 读取开发计划
       const plans = await this.findDevelopmentPlans();
       
-      if (plans.length === 0) {
-        this.logger.warn('⚠️ 未找到开发计划，跳过任务生成');
-        return;
-      }
-      
       // 分析代码现状
       const codeStatus = await this.analyzeCodebase();
       
-      // 根据计划和现状生成任务
-      const tasks = this.createTasksFromPlans(plans, codeStatus);
+      let tasks: Task[] = [];
+      
+      if (plans.length === 0) {
+        this.logger.warn('⚠️ 未找到开发计划，基于代码现状生成默认任务');
+        // 基于代码现状生成默认任务
+        tasks = this.createTasksFromCodeStatus(codeStatus);
+      } else {
+        // 根据计划和现状生成任务
+        tasks = this.createTasksFromPlans(plans, codeStatus);
+      }
       
       // 加入队列
       for (const task of tasks) {
@@ -194,6 +197,105 @@ export class LoopController extends EventEmitter {
     } catch (error: any) {
       this.logger.error('生成任务失败:', error.message);
     }
+  }
+  
+  private createTasksFromCodeStatus(codeStatus: any): Task[] {
+    const tasks: Task[] = [];
+    const now = new Date();
+    
+    // 根据缺失的组件生成任务（与 createTasksFromPlans 相同的逻辑）
+    if (!codeStatus.hasPickerAgent) {
+      tasks.push({
+        id: `task-${Date.now()}-picker`,
+        title: '实现 PickerAgent 选品智能体',
+        description: '实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意',
+        requirements: [
+          '创建 src/lib/ai/agents/PickerAgent.ts',
+          '实现趋势数据源接口',
+          '实现产品创意生成逻辑',
+          '添加单元测试'
+        ],
+        priority: 'high' as const,
+        status: 'pending' as const,
+        maxDuration: 2 * 60 * 60 * 1000,
+        createdAt: now
+      });
+    }
+    
+    if (!codeStatus.hasDesignerAgent) {
+      tasks.push({
+        id: `task-${Date.now()}-designer`,
+        title: '实现 DesignerAgent 设计智能体',
+        description: '实现设计Agent，生成AI图像Prompt并调用图像生成API',
+        requirements: [
+          '创建 src/lib/ai/agents/DesignerAgent.ts',
+          '实现图像Prompt生成',
+          '集成图像生成API',
+          '添加设计模板'
+        ],
+        priority: 'high' as const,
+        status: 'pending' as const,
+        maxDuration: 2 * 60 * 60 * 1000,
+        createdAt: now
+      });
+    }
+    
+    if (!codeStatus.hasMarketerAgent) {
+      tasks.push({
+        id: `task-${Date.now()}-marketer`,
+        title: '实现 MarketerAgent 营销智能体',
+        description: '实现营销Agent，生成商品文案、SEO优化、广告素材',
+        requirements: [
+          '创建 src/lib/ai/agents/MarketerAgent.ts',
+          '实现商品描述生成',
+          '实现SEO关键词优化',
+          '生成社交媒体文案'
+        ],
+        priority: 'medium' as const,
+        status: 'pending' as const,
+        maxDuration: 2 * 60 * 60 * 1000,
+        createdAt: now
+      });
+    }
+    
+    if (!codeStatus.hasOrchestrator) {
+      tasks.push({
+        id: `task-${Date.now()}-orchestrator`,
+        title: '实现 Orchestrator 协调器',
+        description: '实现Agent协调器，管理多Agent协作和状态流转',
+        requirements: [
+          '创建 src/lib/ai/Orchestrator.ts',
+          '实现Agent注册机制',
+          '实现状态管理',
+          '集成LangGraph'
+        ],
+        priority: 'high' as const,
+        status: 'pending' as const,
+        maxDuration: 2 * 60 * 60 * 1000,
+        createdAt: now
+      });
+    }
+    
+    // 如果所有组件都已存在，生成一个代码审查任务
+    if (tasks.length === 0) {
+      tasks.push({
+        id: `task-${Date.now()}-review`,
+        title: '代码质量审查与优化',
+        description: '审查现有代码质量，识别改进点并生成优化建议',
+        requirements: [
+          '分析代码结构和设计模式',
+          '检查类型安全和错误处理',
+          '识别性能瓶颈',
+          '生成优化报告和改进代码'
+        ],
+        priority: 'medium' as const,
+        status: 'pending' as const,
+        maxDuration: 2 * 60 * 60 * 1000,
+        createdAt: now
+      });
+    }
+    
+    return tasks;
   }
 
   private async readAgentsMd(): Promise<string> {

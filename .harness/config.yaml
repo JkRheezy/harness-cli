@@ -1,0 +1,41 @@
+﻿loop:
+  maxConcurrentTasks: 3
+  taskTimeout: 600000
+  pollInterval: 5000
+  prStrategy: auto
+  maxIterations: 50
+  safety:
+    maxRetries: 3
+    requireApprovalAbove: 500
+    protectedFiles:
+      - ".env"
+      - "package-lock.json"
+      - "yarn.lock"
+
+provider:
+  name: "anthropic"
+  apiKey: "${KIMI_API_KEY}"
+  baseUrl: "https://api.kimi.com/coding"
+  model: "kimi-for-coding"
+  timeout: 300000
+
+project:
+  path: "D:\\test\\my-project"
+  name: "PIN E-Commerce Platform"
+  type: "auto"
+  framework: "auto"
+
+pr:
+  enabled: true
+  autoMerge: false
+  draft: false
+  reviewers: []
+  labels:
+    - "harness-loop"
+    - "ai-generated"
+
+logging:
+  level: "info"
+  file: "logs/harness-loop.log"
+  maxSize: "10m"
+  maxFiles: 5

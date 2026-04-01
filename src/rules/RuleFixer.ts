@@ -127,7 +127,11 @@ export class RuleFixer {
       return { success: false, reason: 'No replacement specified' };
     }
 
-    const lineIndex = (line ?? 1) - 1; // Convert to 0-based index
+    if (line === undefined) {
+      return { success: false, reason: 'No line number specified for fix' };
+    }
+
+    const lineIndex = line - 1; // Convert to 0-based index
     if (lineIndex < 0 || lineIndex >= lines.length) {
       return { success: false, reason: `Line ${line} is out of range` };
     }
@@ -135,8 +139,8 @@ export class RuleFixer {
     const originalLine = lines[lineIndex];
     let replacement = fix.replacement;
 
-    // Process capture group references ($1, $2, etc.)
-    if (match && match.length > 1) {
+    // Process capture group references ($1, $2, etc.) and special patterns
+    if (match) {
       replacement = this.processCaptureGroups(replacement, match);
     }
 
@@ -144,11 +148,9 @@ export class RuleFixer {
     let original: string;
 
     // Determine if we're doing partial line replacement or full line replacement
-    if (column !== undefined && match && match.index !== undefined) {
-      // column is 1-based from violation, match.index is 0-based from regex
-      // The column represents where the match starts in the line
-      const columnIndex = column - 1; // Convert to 0-based
-      const matchStart = columnIndex + match.index;
+    if (match && match.index !== undefined) {
+      // Use match.index directly (0-based from regex match)
+      const matchStart = match.index;
       const matchEnd = matchStart + match[0].length;
 
       original = originalLine.substring(matchStart, matchEnd);
@@ -156,10 +158,12 @@ export class RuleFixer {
         originalLine.substring(0, matchStart) +
         replacement +
         originalLine.substring(matchEnd);
-    } else if (match && match.index !== undefined) {
-      // Replace the matched portion within the line
-      const matchStart = match.index;
-      const matchEnd = matchStart + match[0].length;
+    } else if (column !== undefined) {
+      // Fallback: use column to determine match position
+      const columnIndex = column - 1; // Convert to 0-based
+      const matchStart = columnIndex;
+      // Estimate match end based on replacement length as approximation
+      const matchEnd = matchStart + (match?.[0].length ?? replacement.length);
 
       original = originalLine.substring(matchStart, matchEnd);
       newLine =
@@ -191,7 +195,21 @@ export class RuleFixer {
   private processCaptureGroups(replacement: string, match: RegExpMatchArray): string {
     let result = replacement;
 
-    // Replace $1, $2, etc. with capture groups
+    // Step 1: Handle $$ escape sequence first (convert to temporary placeholder)
+    // This prevents interference with capture group processing
+    const dollarPlaceholder = '\x00DOLLAR\x00';
+    result = result.replace(/\$\$/g, dollarPlaceholder);
+
+    // Step 2: Handle escaped dollar signs \$ (convert to temporary placeholder)
+    result = result.replace(/\\\$/g, dollarPlaceholder);
+
+    // Step 3: Handle special replacement patterns ($&, $0)
+    // These are processed before capture groups to avoid conflicts
+    result = result
+      .replace(/\$&/g, match[0]) // Replace $& with entire match
+      .replace(/\$0/g, match[0]); // Support $0 as alias for entire match
+
+    // Step 4: Replace $1, $2, etc. with capture groups
     // Process in reverse order to handle $10 before $1
     for (let i = match.length - 1; i >= 1; i--) {
       const captureGroup = match[i] ?? '';
@@ -199,18 +217,8 @@ export class RuleFixer {
       result = result.split(placeholder).join(captureGroup);
     }
 
-    // Handle special replacement patterns
-    result = result
-      .replace(/\$&/g, match[0]) // Replace $& with entire match
-      .replace(/\$0/g, match[0]) // Support $0 as alias for entire match (standard regex behavior)
-      .replace(/\$`/g, '') // $` (before match) - not supported in this context
-      .replace(/\$'/g, ''); // $' (after match) - not supported in this context
-
-    // Handle escaped dollar signs
-    result = result.replace(/\\\$/g, '$');
-
-    // Handle $$ escape sequence (standard regex behavior)
-    result = result.replace(/\$\$/g, '$');
+    // Step 5: Restore temporary placeholders as literal dollar signs
+    result = result.replace(new RegExp(dollarPlaceholder, 'g'), '$');
 
     return result;
   }

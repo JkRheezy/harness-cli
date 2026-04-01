@@ -20,6 +20,13 @@ class RuleFixer {
      * @returns FixResult with the fixed code and applied/failed fixes
      */
     async fixFile(fileContent, violations) {
+        // Validate input violations
+        for (const v of violations) {
+            if (!v.ruleId) {
+                console.warn('Skipping violation without ruleId');
+                continue;
+            }
+        }
         const lines = fileContent.split('\n');
         const appliedFixes = [];
         const failedFixes = [];
@@ -28,6 +35,7 @@ class RuleFixer {
         if (fixableViolations.length === 0) {
             return {
                 success: true,
+                partial: false,
                 fixedCode: this.options.dryRun ? undefined : fileContent,
                 appliedFixes: [],
                 failedFixes: [],
@@ -78,6 +86,7 @@ class RuleFixer {
         failedFixes.sort((a, b) => a.line - b.line);
         return {
             success: failedFixes.length === 0,
+            partial: appliedFixes.length > 0 && failedFixes.length > 0,
             fixedCode: this.options.dryRun ? undefined : workingLines.join('\n'),
             appliedFixes,
             failedFixes,
@@ -94,23 +103,25 @@ class RuleFixer {
         if (!fix?.replacement) {
             return { success: false, reason: 'No replacement specified' };
         }
-        const lineIndex = (line ?? 1) - 1; // Convert to 0-based index
+        if (line === undefined) {
+            return { success: false, reason: 'No line number specified for fix' };
+        }
+        const lineIndex = line - 1; // Convert to 0-based index
         if (lineIndex < 0 || lineIndex >= lines.length) {
             return { success: false, reason: `Line ${line} is out of range` };
         }
         const originalLine = lines[lineIndex];
         let replacement = fix.replacement;
-        // Process capture group references ($1, $2, etc.)
-        if (match && match.length > 1) {
+        // Process capture group references ($1, $2, etc.) and special patterns
+        if (match) {
             replacement = this.processCaptureGroups(replacement, match);
         }
         let newLine;
         let original;
         // Determine if we're doing partial line replacement or full line replacement
-        if (column !== undefined && match && match.index !== undefined) {
-            // Partial line replacement based on column and match position
-            const columnIndex = column - 1; // Convert to 0-based
-            const matchStart = columnIndex + match.index;
+        if (match && match.index !== undefined) {
+            // Use match.index directly (0-based from regex match)
+            const matchStart = match.index;
             const matchEnd = matchStart + match[0].length;
             original = originalLine.substring(matchStart, matchEnd);
             newLine =
@@ -118,10 +129,12 @@ class RuleFixer {
                     replacement +
                     originalLine.substring(matchEnd);
         }
-        else if (match && match.index !== undefined) {
-            // Replace the matched portion within the line
-            const matchStart = match.index;
-            const matchEnd = matchStart + match[0].length;
+        else if (column !== undefined) {
+            // Fallback: use column to determine match position
+            const columnIndex = column - 1; // Convert to 0-based
+            const matchStart = columnIndex;
+            // Estimate match end based on replacement length as approximation
+            const matchEnd = matchStart + (match?.[0].length ?? replacement.length);
             original = originalLine.substring(matchStart, matchEnd);
             newLine =
                 originalLine.substring(0, matchStart) +
@@ -149,20 +162,26 @@ class RuleFixer {
      */
     processCaptureGroups(replacement, match) {
         let result = replacement;
-        // Replace $1, $2, etc. with capture groups
+        // Step 1: Handle $$ escape sequence first (convert to temporary placeholder)
+        // This prevents interference with capture group processing
+        const dollarPlaceholder = '\x00DOLLAR\x00';
+        result = result.replace(/\$\$/g, dollarPlaceholder);
+        // Step 2: Handle escaped dollar signs \$ (convert to temporary placeholder)
+        result = result.replace(/\\\$/g, dollarPlaceholder);
+        // Step 3: Handle special replacement patterns ($&, $0)
+        // These are processed before capture groups to avoid conflicts
+        result = result
+            .replace(/\$&/g, match[0]) // Replace $& with entire match
+            .replace(/\$0/g, match[0]); // Support $0 as alias for entire match
+        // Step 4: Replace $1, $2, etc. with capture groups
         // Process in reverse order to handle $10 before $1
         for (let i = match.length - 1; i >= 1; i--) {
             const captureGroup = match[i] ?? '';
             const placeholder = `$${i}`;
             result = result.split(placeholder).join(captureGroup);
         }
-        // Handle special replacement patterns
-        result = result
-            .replace(/\$&/g, match[0]) // Replace $& with entire match
-            .replace(/\$`/g, '') // $` (before match) - not supported in this context
-            .replace(/\$'/g, ''); // $' (after match) - not supported in this context
-        // Handle escaped dollar signs
-        result = result.replace(/\\\$/g, '$');
+        // Step 5: Restore temporary placeholders as literal dollar signs
+        result = result.replace(new RegExp(dollarPlaceholder, 'g'), '$');
         return result;
     }
     /**

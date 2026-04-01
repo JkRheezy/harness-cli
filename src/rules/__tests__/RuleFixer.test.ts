@@ -41,7 +41,7 @@ describe('RuleFixer', () => {
         original: 'require("bar")',
         replacement: 'import bar from "bar"',
       });
-      expect(result.fixedCode).toBe('const foo = import bar from "bar"');
+      expect(result.fixedCode).toBe('const foo = import bar from "bar";');
     });
 
     it('should process multiple capture groups', async () => {
@@ -200,7 +200,7 @@ describe('RuleFixer', () => {
 
       expect(result.success).toBe(false);
       expect(result.failedFixes).toHaveLength(1);
-      expect(result.failedFixes[0].reason).toContain('out of range');
+      expect(result.failedFixes[0].reason).toContain('No line number specified');
     });
 
     it('should skip non-auto-fixable violations', async () => {

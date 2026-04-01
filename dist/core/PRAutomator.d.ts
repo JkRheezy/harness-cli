@@ -17,7 +17,9 @@ export declare class PRAutomator {
     private repo;
     private hasGhCLI;
     private ghPath;
+    private initialized;
     constructor();
+    initialize(): Promise<void>;
     private checkGhCLI;
     private initRepo;
     create(options: PRCreateOptions): Promise<any>;

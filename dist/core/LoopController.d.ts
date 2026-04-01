@@ -44,6 +44,7 @@ export declare class LoopController extends EventEmitter {
     stop(): Promise<void>;
     getStatus(): Promise<any>;
     private generateTasksFromProject;
+    private createTasksFromCodeStatus;
     private readAgentsMd;
     private findDevelopmentPlans;
     private extractTasksFromPlan;

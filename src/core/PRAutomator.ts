@@ -22,6 +22,7 @@ export class PRAutomator {
   private repo: { owner: string; repo: string };
   private hasGhCLI: boolean = false;
   private ghPath: string = 'gh';
+  private initialized: boolean = false;
 
   constructor() {
     this.git = simpleGit();
@@ -30,8 +31,15 @@ export class PRAutomator {
     
     // 从 git remote 解析仓库信息
     this.repo = { owner: '', repo: '' };
-    this.initRepo();
-    this.checkGhCLI();
+  }
+
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    await this.initRepo();
+    await this.checkGhCLI();
+    
+    this.initialized = true;
   }
 
   private async checkGhCLI(): Promise<void> {
@@ -87,6 +95,7 @@ export class PRAutomator {
   }
 
   async create(options: PRCreateOptions): Promise<any> {
+    await this.initialize();
     this.logger.info('🔀 创建 PR:', options.title);
     
     try {
@@ -193,6 +202,7 @@ export class PRAutomator {
   }
 
   async merge(options: PRMergeOptions): Promise<void> {
+    await this.initialize();
     this.logger.info(`🔀 合并 PR #${options.number}`);
     
     try {
@@ -214,6 +224,7 @@ export class PRAutomator {
   }
 
   async getPR(number: number): Promise<any> {
+    await this.initialize();
     try {
       const command = `"${this.ghPath}" pr view ${number} --json number,title,body,state,url,headRefName,baseRefName`;
       const result = await this.runCommand(command);
@@ -231,6 +242,7 @@ export class PRAutomator {
   }
 
   async listPRs(options: { state?: string; author?: string } = {}): Promise<any[]> {
+    await this.initialize();
     try {
       let command = `"${this.ghPath}" pr list --json number,title,author,state,url`;
       
@@ -257,6 +269,7 @@ export class PRAutomator {
   }
 
   async approve(number: number, comment?: string): Promise<void> {
+    await this.initialize();
     this.logger.info(`✅ 批准 PR #${number}`);
     
     try {
@@ -281,6 +294,7 @@ export class PRAutomator {
   }
 
   async requestChanges(number: number, comment: string): Promise<void> {
+    await this.initialize();
     this.logger.info(`📝 请求修改 PR #${number}`);
     
     try {
@@ -300,6 +314,7 @@ export class PRAutomator {
   }
 
   async addComment(number: number, comment: string): Promise<void> {
+    await this.initialize();
     try {
       const command = `"${this.ghPath}" pr comment ${number} --body "${comment}"`;
       const result = await this.runCommand(command);
@@ -315,6 +330,7 @@ export class PRAutomator {
   }
 
   async checkStatus(number: number): Promise<any> {
+    await this.initialize();
     try {
       // 获取 PR 状态
       const pr = await this.getPR(number);
@@ -345,6 +361,7 @@ export class PRAutomator {
   }
 
   async waitForChecks(number: number, timeout: number = 300000): Promise<boolean> {
+    await this.initialize();
     this.logger.info(`⏳ 等待 PR #${number} 检查完成...`);
     
     const startTime = Date.now();
