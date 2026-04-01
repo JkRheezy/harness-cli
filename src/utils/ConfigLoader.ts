@@ -1,6 +1,7 @@
 import yaml from 'js-yaml';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { EvolutionConfig, BusinessContext } from '../evolution/types';
 
 export interface HarnessConfig {
   llm: {
@@ -31,6 +32,8 @@ export interface HarnessConfig {
     skillsPath: string;
   };
   projectPath?: string;
+  evolution?: EvolutionConfig;
+  businessContext?: BusinessContext;
 }
 
 export class ConfigLoader {
@@ -62,6 +65,17 @@ export class ConfigLoader {
         autoDesign: true,
         requireApproval: false,
         skillsPath: '.config/agents/skills'
+      },
+      evolution: {
+        enabled: true,
+        checkInterval: 300000,
+        maxOpportunitiesPerAnalysis: 5,
+        minImpactThreshold: 5,
+        categories: {
+          technical: true,
+          business: true,
+          ux: true
+        }
       }
     };
 
@@ -79,13 +93,30 @@ export class ConfigLoader {
   }
 
   private static mergeConfig(defaults: HarnessConfig, overrides: Partial<HarnessConfig>): HarnessConfig {
-    const merged = {
+    const merged: HarnessConfig = {
       llm: { ...defaults.llm, ...overrides.llm },
       safety: { ...defaults.safety, ...overrides.safety },
       checkpoint: { ...defaults.checkpoint, ...overrides.checkpoint },
       github: { ...defaults.github, ...overrides.github },
       projectPath: overrides.projectPath || defaults.projectPath
     };
+    
+    // Merge evolution config if provided
+    if (overrides.evolution) {
+      merged.evolution = {
+        ...defaults.evolution,
+        ...overrides.evolution,
+        categories: {
+          ...defaults.evolution?.categories,
+          ...overrides.evolution.categories
+        }
+      };
+    }
+    
+    // Merge business context if provided
+    if (overrides.businessContext) {
+      merged.businessContext = overrides.businessContext;
+    }
     
     // 替换环境变量占位符 ${ENV_VAR}
     this.resolveEnvVariables(merged);
@@ -147,6 +178,33 @@ checkpoint:
 # GitHub 配置
 github:
   token: \${GITHUB_TOKEN}  # 从环境变量读取
+
+# Auto-evolution configuration
+evolution:
+  enabled: true
+  checkInterval: 300000
+  maxOpportunitiesPerAnalysis: 5
+  minImpactThreshold: 5
+  categories:
+    technical: true
+    business: true
+    ux: true
+
+# Business context for feature analysis (optional)
+businessContext:
+  domain: ecommerce
+  currentFeatures:
+    - product catalog
+    - shopping cart
+  userFlows:
+    - name: Purchase Flow
+      steps:
+        - browse
+        - cart
+        - checkout
+      entryPoints:
+        - homepage
+      conversionGoal: purchase completed
 `;
 
     await fs.writeFile(configPath, defaultConfig, 'utf-8');
