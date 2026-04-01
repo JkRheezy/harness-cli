@@ -13,6 +13,8 @@ import { DesignPhase } from './DesignPhase';
 import { PRWorkflow } from './PRWorkflow';
 import { ResilientErrorHandler } from './ResilientLoop';
 import { DesignResult, PRWorkflowResult } from '../types/superpowers';
+import { AutoEvolution } from '../evolution/AutoEvolution';
+import { EvolutionConfig, BusinessContext } from '../evolution/types';
 
 export interface LoopConfig {
   llm: {
@@ -66,6 +68,9 @@ export class LoopController extends EventEmitter {
   private prWorkflow: PRWorkflow;
   private errorHandler: ResilientErrorHandler;
   private enableSuperpowers: boolean;
+  private autoEvolution: AutoEvolution;
+  private evolutionConfig: EvolutionConfig;
+  private businessContext?: BusinessContext;
 
   constructor(config: LoopConfig) {
     super();
@@ -89,6 +94,21 @@ export class LoopController extends EventEmitter {
     this.designPhase = new DesignPhase(true);
     this.prWorkflow = new PRWorkflow();
     this.errorHandler = new ResilientErrorHandler(3);
+
+    // Initialize auto-evolution
+    this.evolutionConfig = config.evolution || {
+      enabled: true,
+      checkInterval: 300000,
+      maxOpportunitiesPerAnalysis: 5,
+      minImpactThreshold: 5,
+      categories: {
+        technical: true,
+        business: true,
+        ux: true
+      }
+    };
+
+    this.autoEvolution = new AutoEvolution(this.evolutionConfig, this.taskQueue);
   }
 
   async start(options: LoopOptions): Promise<void> {
@@ -136,8 +156,20 @@ export class LoopController extends EventEmitter {
             continue;
           }
           
-          // 无任务，短暂休眠
-          await this.sleep(1000);
+          // Auto-evolution: when queue is empty and initial tasks done
+          if (this.evolutionConfig.enabled) {
+            const evolved = await this.autoEvolution.trigger(
+              'queue_empty',
+              this.projectPath,
+              this.businessContext
+            );
+            if (evolved) {
+              continue;
+            }
+          }
+          
+          this.logger.info('✨ 所有任务完成，队列为空，等待新任务...');
+          await this.sleep(5000);
           continue;
         }
         
@@ -149,6 +181,15 @@ export class LoopController extends EventEmitter {
         
         // 处理结果
         await this.processResult(this.currentTask, result);
+        
+        // Periodic auto-evolution check
+        if (this.stats.completed > 0 && this.stats.completed % 5 === 0) {
+          await this.autoEvolution.trigger(
+            'periodic_check',
+            this.projectPath,
+            this.businessContext
+          );
+        }
         
       } catch (error: any) {
         this.logger.error('Loop 执行错误:', error);
@@ -873,5 +914,13 @@ export class LoopController extends EventEmitter {
     
     const errorMessage = error.message || String(error);
     return fatalPatterns.some(p => errorMessage.includes(p));
+  }
+
+  /**
+   * Set business context for evolution analysis
+   */
+  setBusinessContext(context: BusinessContext): void {
+    this.businessContext = context;
+    this.logger.info(`💼 Business context set: ${context.domain}`);
   }
 }
