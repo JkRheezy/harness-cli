@@ -1,41 +1,27 @@
-﻿loop:
-  maxConcurrentTasks: 3
-  taskTimeout: 600000
-  pollInterval: 5000
-  prStrategy: auto
-  maxIterations: 50
-  safety:
-    maxRetries: 3
-    requireApprovalAbove: 500
-    protectedFiles:
-      - ".env"
-      - "package-lock.json"
-      - "yarn.lock"
+﻿# Harness-Engineering 生产环境配置
+# 版本: 2.1.0
 
-provider:
-  name: "anthropic"
-  apiKey: "${KIMI_API_KEY}"
-  baseUrl: "https://api.kimi.com/coding"
-  model: "kimi-for-coding"
-  timeout: 300000
+# LLM 配置 - 使用 Kimi API (通过 Anthropic 兼容接口)
+llm:
+  provider: anthropic
+  model: kimi-for-coding
+  apiKey: ${KIMI_API_KEY}
+  baseUrl: https://api.kimi.com/coding
+  maxTokens: 128000
+  temperature: 0.2
+  timeout: 300000  # 5分钟
 
-project:
-  path: "D:\\test\\my-project"
-  name: "PIN E-Commerce Platform"
-  type: "auto"
-  framework: "auto"
+# 安全边界配置
+safety:
+  maxExecutionTime: 21600000  # 6小时
+  maxErrorRate: 0.5
+  maxComplexity: 100
 
-pr:
+# 检查点配置
+checkpoint:
   enabled: true
-  autoMerge: false
-  draft: false
-  reviewers: []
-  labels:
-    - "harness-loop"
-    - "ai-generated"
+  interval: 300000  # 5分钟
 
-logging:
-  level: "info"
-  file: "logs/harness-loop.log"
-  maxSize: "10m"
-  maxFiles: 5
+# GitHub 配置
+github:
+  token: ${GITHUB_TOKEN}
