@@ -41,6 +41,8 @@
   "homepage": "https://github.com/your-org/harness-cli#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
+    "@langchain/core": "^0.3.80",
+    "@langchain/langgraph": "^0.2.74",
     "commander": "^12.0.0",
     "dotenv": "^16.4.0",
     "glob": "^10.3.0",
