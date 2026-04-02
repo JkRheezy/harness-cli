@@ -59,6 +59,10 @@ export interface EvolutionConfig {
         business: boolean;
         ux: boolean;
     };
+    documentation?: {
+        autoUpdate: boolean;
+        maintainRoadmap: boolean;
+    };
     businessContext?: BusinessContext;
 }
 export interface Gap {

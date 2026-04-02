@@ -4,10 +4,10 @@ exports.AutoEvolution = void 0;
 const Logger_1 = require("../utils/Logger");
 const OpportunityDetector_1 = require("./OpportunityDetector");
 class AutoEvolution {
-    constructor(config, taskQueue) {
+    constructor(config, taskQueue, projectPath) {
         this.iterationCount = 0;
         this.logger = new Logger_1.Logger();
-        this.detector = new OpportunityDetector_1.OpportunityDetector(config);
+        this.detector = new OpportunityDetector_1.OpportunityDetector(config, projectPath);
         this.taskQueue = taskQueue;
         this.config = config;
     }
@@ -128,6 +128,12 @@ class AutoEvolution {
             iterationCount: this.iterationCount,
             enabled: this.config.enabled
         };
+    }
+    /**
+     * Set project path for the detector
+     */
+    setProjectPath(projectPath) {
+        this.detector.setProjectPath(projectPath);
     }
 }
 exports.AutoEvolution = AutoEvolution;

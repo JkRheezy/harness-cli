@@ -30,9 +30,9 @@ export class AutoEvolution {
   private config: EvolutionConfig;
   private iterationCount: number = 0;
 
-  constructor(config: EvolutionConfig, taskQueue: TaskQueue) {
+  constructor(config: EvolutionConfig, taskQueue: TaskQueue, projectPath?: string) {
     this.logger = new Logger();
-    this.detector = new OpportunityDetector(config);
+    this.detector = new OpportunityDetector(config, projectPath);
     this.taskQueue = taskQueue;
     this.config = config;
   }
@@ -182,5 +182,12 @@ export class AutoEvolution {
       iterationCount: this.iterationCount,
       enabled: this.config.enabled
     };
+  }
+
+  /**
+   * Set project path for the detector
+   */
+  setProjectPath(projectPath: string): void {
+    this.detector.setProjectPath(projectPath);
   }
 }

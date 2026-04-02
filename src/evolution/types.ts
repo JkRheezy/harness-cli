@@ -81,6 +81,10 @@ export interface EvolutionConfig {
     business: boolean;
     ux: boolean;
   };
+  documentation?: {
+    autoUpdate: boolean;      // Auto-update AGENTS.md
+    maintainRoadmap: boolean; // Maintain roadmap
+  };
   businessContext?: BusinessContext;
 }
 

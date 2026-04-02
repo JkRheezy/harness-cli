@@ -72,9 +72,13 @@ export class ConfigLoader {
         maxOpportunitiesPerAnalysis: 5,
         minImpactThreshold: 5,
         categories: {
-          technical: true,
-          business: true,
-          ux: true
+          technical: true,    // Technical debt
+          business: true,     // Business features
+          ux: true           // User experience
+        },
+        documentation: {
+          autoUpdate: true,      // Auto-update AGENTS.md
+          maintainRoadmap: true  // Maintain roadmap
         }
       }
     };
@@ -109,6 +113,10 @@ export class ConfigLoader {
         categories: {
           ...defaults.evolution?.categories,
           ...overrides.evolution.categories
+        },
+        documentation: {
+          autoUpdate: overrides.evolution.documentation?.autoUpdate ?? defaults.evolution?.documentation?.autoUpdate ?? true,
+          maintainRoadmap: overrides.evolution.documentation?.maintainRoadmap ?? defaults.evolution?.documentation?.maintainRoadmap ?? true
         }
       };
     }
@@ -194,9 +202,12 @@ evolution:
   maxOpportunitiesPerAnalysis: 5
   minImpactThreshold: 5
   categories:
-    technical: true
-    business: true
-    ux: true
+    technical: true    # Technical debt
+    business: true     # Business features
+    ux: true          # User experience
+  documentation:
+    autoUpdate: true      # Auto-update AGENTS.md
+    maintainRoadmap: true # Maintain roadmap
 
 # Business context for feature analysis (optional)
 businessContext:

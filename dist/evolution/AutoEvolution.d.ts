@@ -20,7 +20,7 @@ export declare class AutoEvolution {
     private taskQueue;
     private config;
     private iterationCount;
-    constructor(config: EvolutionConfig, taskQueue: TaskQueue);
+    constructor(config: EvolutionConfig, taskQueue: TaskQueue, projectPath?: string);
     trigger(trigger: 'queue_empty' | 'periodic_check', projectPath: string, context?: BusinessContext): Promise<boolean>;
     private convertToTask;
     private buildTaskDescription;
@@ -30,5 +30,9 @@ export declare class AutoEvolution {
         iterationCount: number;
         enabled: boolean;
     };
+    /**
+     * Set project path for the detector
+     */
+    setProjectPath(projectPath: string): void;
 }
 //# sourceMappingURL=AutoEvolution.d.ts.map
