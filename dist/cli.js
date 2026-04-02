@@ -64,7 +64,7 @@ program
         const config = await ConfigLoader_1.ConfigLoader.load(options.config);
         const controller = new LoopController_1.LoopController(config);
         // 设置运行时长限制
-        const maxDuration = parseInt(options.duration) * 60 * 60 * 1000;
+        const maxDuration = parseFloat(options.duration) * 60 * 60 * 1000;
         // 启动 Loop
         await controller.start({
             maxDuration,
@@ -94,7 +94,7 @@ program
             description: options.description,
             requirements: options.requirements?.split(',') || [],
             priority: options.priority,
-            maxDuration: parseInt(options.maxDuration) * 60 * 60 * 1000,
+            maxDuration: parseFloat(options.maxDuration) * 60 * 60 * 1000,
             status: 'pending',
             createdAt: new Date()
         };

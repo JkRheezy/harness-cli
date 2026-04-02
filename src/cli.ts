@@ -32,7 +32,7 @@ program
       const controller = new LoopController(config);
       
       // 设置运行时长限制
-      const maxDuration = parseInt(options.duration) * 60 * 60 * 1000;
+      const maxDuration = parseFloat(options.duration) * 60 * 60 * 1000;
       
       // 启动 Loop
       await controller.start({
@@ -65,7 +65,7 @@ program
         description: options.description,
         requirements: options.requirements?.split(',') || [],
         priority: options.priority as 'low' | 'medium' | 'high',
-        maxDuration: parseInt(options.maxDuration) * 60 * 60 * 1000,
+        maxDuration: parseFloat(options.maxDuration) * 60 * 60 * 1000,
         status: 'pending',
         createdAt: new Date()
       };
