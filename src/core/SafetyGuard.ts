@@ -86,23 +86,34 @@ export class SafetyGuard {
   }
 
   private checkErrorRate(context: ExecutionContext): SafetyCheck {
-    if (context.totalAttempts === 0) {
+    // 样本不足时不检查错误率
+    if (context.totalAttempts < 5) {
       return { passed: true };
     }
     
-    const errorRate = context.errors / context.totalAttempts;
+    // 使用滑动窗口：只计算最近10个任务的错误率
+    // 而不是累积所有历史任务的错误率
+    const windowSize = Math.min(10, context.totalAttempts);
+    
+    // 从 actionHistory 中提取最近的任务结果
+    const recentActions = context.actionHistory.slice(-windowSize);
+    const recentErrors = recentActions.filter(action => 
+      action.includes('task_failed') || action.includes('task_escalated')
+    ).length;
+    
+    const errorRate = recentErrors / windowSize;
     
     if (errorRate > this.config.maxErrorRate) {
       return {
         passed: false,
         action: 'stop',
-        reason: `错误率 ${(errorRate * 100).toFixed(1)}% 超过最大限制 ${(this.config.maxErrorRate * 100).toFixed(1)}%`
+        reason: `最近${windowSize}个任务错误率 ${(errorRate * 100).toFixed(1)}% 超过最大限制 ${(this.config.maxErrorRate * 100).toFixed(1)}%`
       };
     }
     
     // 警告：错误率超过 50%
     if (errorRate > 0.5) {
-      this.logger.warn(`错误率较高: ${(errorRate * 100).toFixed(1)}%`);
+      this.logger.warn(`最近${windowSize}个任务错误率较高: ${(errorRate * 100).toFixed(1)}%`);
     }
     
     return { passed: true };

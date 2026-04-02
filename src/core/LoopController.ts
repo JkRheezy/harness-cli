@@ -884,12 +884,9 @@ export class LoopController extends EventEmitter {
       this.logger.info('📂 加载检查点');
       
       if (checkpoint.stats) {
-        // 保留 completed 计数，但重置 failed 和 escalated
-        // 避免错误率 100% 导致立即触发安全检查停止
-        this.stats.completed = checkpoint.stats.completed;
-        this.stats.failed = 0;
-        this.stats.escalated = checkpoint.stats.escalated;
-        this.logger.info(`📊 重置错误计数 (completed: ${this.stats.completed})`);
+        // 保留完整的执行历史 - checkpoint 是真相来源
+        this.stats = checkpoint.stats;
+        this.logger.info(`📊 恢复执行历史: 完成${this.stats.completed}, 失败${this.stats.failed}`);
       }
       
       if (checkpoint.queueState) {
