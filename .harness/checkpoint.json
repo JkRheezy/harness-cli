@@ -1,7 +1,7 @@
 {
-  "timestamp": 1775095989746,
+  "timestamp": 1775096876302,
   "currentTask": {
-    "id": "task-1775088189523-picker",
+    "id": "task-1775096576290-picker",
     "title": "实现 PickerAgent 选品智能体",
     "description": "实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意",
     "requirements": [
@@ -11,28 +11,26 @@
       "添加单元测试"
     ],
     "priority": "high",
-    "status": "failed",
+    "status": "running",
     "maxDuration": 7200000,
-    "createdAt": "2026-04-02T00:03:09.523Z",
-    "startedAt": "2026-04-02T00:03:09.525Z",
-    "result": {
-      "status": "failed",
-      "error": "ENOENT: no such file or directory, open 'D:\\work\\study\\Kimi_Agent_OpenAI_Harness\\harness-cli\\src\\lib\\ai\\index.ts'",
-      "canRetry": false,
-      "duration": 581036,
-      "completedAt": "2026-04-02T00:12:50.560Z"
-    },
-    "fixTaskId": "fix-1775088770560"
+    "createdAt": "2026-04-02T02:22:56.290Z",
+    "startedAt": "2026-04-02T02:22:56.291Z"
   },
   "stats": {
     "completed": 0,
-    "failed": 1,
+    "failed": 0,
     "escalated": 0
+  },
+  "sessionStats": {
+    "completed": 0,
+    "failed": 0,
+    "escalated": 0,
+    "startTime": 1775096576285
   },
   "queueState": {
     "queue": [
       {
-        "id": "task-1775088189523-designer",
+        "id": "task-1775096576290-designer",
         "title": "实现 DesignerAgent 设计智能体",
         "description": "实现设计Agent，生成AI图像Prompt并调用图像生成API",
         "requirements": [
@@ -44,10 +42,10 @@
         "priority": "high",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-02T00:03:09.523Z"
+        "createdAt": "2026-04-02T02:22:56.290Z"
       },
       {
-        "id": "task-1775088189523-orchestrator",
+        "id": "task-1775096576290-orchestrator",
         "title": "实现 Orchestrator 协调器",
         "description": "实现Agent协调器，管理多Agent协作和状态流转",
         "requirements": [
@@ -59,10 +57,10 @@
         "priority": "high",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-02T00:03:09.523Z"
+        "createdAt": "2026-04-02T02:22:56.290Z"
       },
       {
-        "id": "task-1775088189523-marketer",
+        "id": "task-1775096576290-marketer",
         "title": "实现 MarketerAgent 营销智能体",
         "description": "实现营销Agent，生成商品文案、SEO优化、广告素材",
         "requirements": [
@@ -74,10 +72,27 @@
         "priority": "medium",
         "status": "pending",
         "maxDuration": 7200000,
-        "createdAt": "2026-04-02T00:03:09.523Z"
+        "createdAt": "2026-04-02T02:22:56.290Z"
       }
     ],
-    "activeTasks": []
+    "activeTasks": [
+      {
+        "id": "task-1775096576290-picker",
+        "title": "实现 PickerAgent 选品智能体",
+        "description": "实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意",
+        "requirements": [
+          "创建 src/lib/ai/agents/PickerAgent.ts",
+          "实现趋势数据源接口",
+          "实现产品创意生成逻辑",
+          "添加单元测试"
+        ],
+        "priority": "high",
+        "status": "running",
+        "maxDuration": 7200000,
+        "createdAt": "2026-04-02T02:22:56.290Z",
+        "startedAt": "2026-04-02T02:22:56.291Z"
+      }
+    ]
   },
   "hasGeneratedInitialTasks": true
 }

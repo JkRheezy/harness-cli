@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
+import { OrchestrationConfig } from '../types/orchestration';
 export interface LoopConfig {
     llm: {
         provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -21,6 +22,7 @@ export interface LoopConfig {
     };
     projectPath?: string;
     evolution?: EvolutionConfig;
+    orchestration?: OrchestrationConfig;
 }
 export interface LoopOptions {
     maxDuration: number;
@@ -56,7 +58,13 @@ export declare class LoopController extends EventEmitter {
     private autoEvolution;
     private evolutionConfig;
     private businessContext?;
+    private useLangGraph;
+    private harnessGraph?;
     constructor(config: LoopConfig);
+    private initializeLangGraph;
+    getArchitectureDiagram(): Promise<string>;
+    saveArchitectureDiagram(outputPath: string): Promise<void>;
+    private getLegacyArchitectureDescription;
     start(options: LoopOptions): Promise<void>;
     stop(): Promise<void>;
     getStatus(): Promise<any>;

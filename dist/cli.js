@@ -33,6 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
 const LoopController_1 = require("./core/LoopController");
@@ -41,6 +44,7 @@ const PRAutomator_1 = require("./core/PRAutomator");
 const ReviewAgent_1 = require("./core/ReviewAgent");
 const ConfigLoader_1 = require("./utils/ConfigLoader");
 const Logger_1 = require("./utils/Logger");
+const visualize_1 = __importDefault(require("./commands/visualize"));
 const program = new commander_1.Command();
 const logger = new Logger_1.Logger();
 program
@@ -291,5 +295,7 @@ function formatDuration(ms) {
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}小时${minutes}分钟`;
 }
+// ========== 可视化命令 ==========
+program.addCommand(visualize_1.default);
 program.parse();
 //# sourceMappingURL=cli.js.map

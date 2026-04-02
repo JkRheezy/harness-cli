@@ -49,6 +49,7 @@ const DesignPhase_1 = require("./DesignPhase");
 const PRWorkflow_1 = require("./PRWorkflow");
 const ResilientLoop_1 = require("./ResilientLoop");
 const AutoEvolution_1 = require("../evolution/AutoEvolution");
+const HarnessGraph_1 = require("../orchestration/graph/HarnessGraph");
 class LoopController extends events_1.EventEmitter {
     constructor(config) {
         super();
@@ -105,6 +106,42 @@ class LoopController extends events_1.EventEmitter {
             escalated: 0,
             startTime: Date.now()
         };
+        // Initialize LangGraph
+        this.useLangGraph = config.orchestration !== undefined;
+        if (this.useLangGraph) {
+            this.initializeLangGraph();
+        }
+    }
+    initializeLangGraph() {
+        const orchestrationConfig = this.config.orchestration || {
+            enableHumanReview: false,
+            enableParallelExecution: false,
+            enableABTesting: false,
+            maxParallelAgents: 3,
+            reviewTimeoutMs: 300000
+        };
+        this.harnessGraph = new HarnessGraph_1.HarnessGraph(orchestrationConfig, {
+            llmConfig: this.config.llm,
+            workingDir: this.config.projectPath || process.cwd()
+        });
+    }
+    async getArchitectureDiagram() {
+        if (!this.useLangGraph || !this.harnessGraph) {
+            return this.getLegacyArchitectureDescription();
+        }
+        return this.harnessGraph.getMermaidDiagram();
+    }
+    async saveArchitectureDiagram(outputPath) {
+        const diagram = await this.getArchitectureDiagram();
+        await fs.writeFile(outputPath, diagram, 'utf-8');
+    }
+    getLegacyArchitectureDescription() {
+        return `graph TD
+    Start[Start] --> TaskQueue[Task Queue]
+    TaskQueue --> Executor[Task Executor]
+    Executor --> Review[Review Agent]
+    Review --> PR[PR Automator]
+    PR --> End[End]`;
     }
     async start(options) {
         this.isRunning = true;
