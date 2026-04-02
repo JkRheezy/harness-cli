@@ -1,0 +1,61 @@
+# Harness-Engineering CLI Configuration Example
+# Copy this file to config.yaml and customize for your project
+
+# LLM Configuration
+llm:
+  provider: openai  # Options: openai, anthropic, kimi, google, local
+  model: gpt-4
+  apiKey: your-api-key-here
+  baseUrl: null  # Optional: custom API endpoint
+  maxTokens: 4000
+  temperature: 0.2
+  timeout: 300000  # 5 minutes in milliseconds
+
+# Safety Limits
+safety:
+  maxExecutionTime: 21600000  # 6 hours in milliseconds
+  maxErrorRate: 0.5  # Stop if more than 50% of tasks fail
+  maxComplexity: 100  # Maximum task complexity score
+
+# Checkpoint Configuration
+checkpoint:
+  enabled: true
+  interval: 300000  # 5 minutes in milliseconds
+
+# Project Path (optional)
+projectPath: null  # Defaults to current working directory
+
+# GitHub Configuration (for PR automation)
+github:
+  token: your-github-token-here
+
+# LangGraph Orchestration Configuration
+orchestration:
+  # Enable human-in-the-loop review before critical operations
+  enableHumanReview: false
+  
+  # Timeout for human review in milliseconds (default: 5 minutes)
+  reviewTimeoutMs: 300000
+  
+  # Auto-approve after timeout (if human review enabled)
+  autoApproveAfterTimeout: false
+  
+  # Enable parallel agent execution
+  enableParallelExecution: false
+  
+  # Maximum number of parallel agents (when parallel execution enabled)
+  maxParallelAgents: 3
+  
+  # Enable A/B testing for different agent strategies
+  enableABTesting: false
+
+# Auto-Evolution Configuration
+evolution:
+  enabled: true
+  checkInterval: 300000  # 5 minutes
+  maxOpportunitiesPerAnalysis: 5
+  minImpactThreshold: 5
+  categories:
+    technical: true
+    business: true
+    ux: true
