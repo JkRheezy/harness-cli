@@ -392,7 +392,21 @@ class TaskExecutor {
             this.logger.info('ℹ️ 没有代码变更需要提交');
             return branchName;
         }
-        await this.git.checkoutLocalBranch(branchName);
+        // 检查分支是否已存在，如果存在则切换到该分支
+        try {
+            const { stdout: branchList } = await this.runCommand(`git branch --list ${branchName}`);
+            if (branchList && branchList.trim().includes(branchName)) {
+                this.logger.info(`🔀 分支 ${branchName} 已存在，切换到该分支`);
+                await this.runCommand(`git checkout ${branchName}`);
+            }
+            else {
+                await this.git.checkoutLocalBranch(branchName);
+            }
+        }
+        catch (error) {
+            // 如果检查失败，尝试直接创建（可能会失败，但会抛出更清晰的错误）
+            await this.git.checkoutLocalBranch(branchName);
+        }
         // 只添加非日志文件
         for (const file of filesToAdd) {
             try {
