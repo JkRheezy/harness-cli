@@ -26,6 +26,12 @@ export interface LoopOptions {
     maxDuration: number;
     dryRun?: boolean;
 }
+export interface SessionStats {
+    completed: number;
+    failed: number;
+    escalated: number;
+    startTime: number;
+}
 export declare class LoopController extends EventEmitter {
     private config;
     private taskQueue;
@@ -40,6 +46,7 @@ export declare class LoopController extends EventEmitter {
     private startTime;
     private currentTask;
     private stats;
+    private sessionStats;
     private actionHistory;
     private hasGeneratedInitialTasks;
     private designPhase;

@@ -60,6 +60,12 @@ class LoopController extends events_1.EventEmitter {
             failed: 0,
             escalated: 0
         };
+        this.sessionStats = {
+            completed: 0,
+            failed: 0,
+            escalated: 0,
+            startTime: Date.now()
+        };
         this.actionHistory = [];
         this.hasGeneratedInitialTasks = false;
         this.config = config;
@@ -92,6 +98,13 @@ class LoopController extends events_1.EventEmitter {
             }
         };
         this.autoEvolution = new AutoEvolution_1.AutoEvolution(this.evolutionConfig, this.taskQueue);
+        // Initialize session stats
+        this.sessionStats = {
+            completed: 0,
+            failed: 0,
+            escalated: 0,
+            startTime: Date.now()
+        };
     }
     async start(options) {
         this.isRunning = true;
@@ -158,8 +171,9 @@ class LoopController extends events_1.EventEmitter {
                 await this.handleLoopError(error);
             }
         }
-        this.logger.info('🏁 Loop 已停止');
-        this.logger.info(`📊 统计: 完成${this.stats.completed}, 失败${this.stats.failed}, 升级${this.stats.escalated}`);
+        this.logger.info('🏁 Loop stopped');
+        this.logger.info(`📊 Session stats: completed=${this.sessionStats.completed}, failed=${this.sessionStats.failed}`);
+        this.logger.info(`📊 Lifetime stats: completed=${this.stats.completed}, failed=${this.stats.failed}, escalated=${this.stats.escalated}`);
     }
     async stop() {
         this.logger.info('🛑 正在停止 Loop...');
@@ -174,8 +188,8 @@ class LoopController extends events_1.EventEmitter {
             loopStatus: this.isRunning ? 'running' : 'stopped',
             activeTasks: this.currentTask ? 1 : 0,
             pendingTasks: await this.taskQueue.getPendingCount(),
-            completedTasks: this.stats.completed,
-            failedTasks: this.stats.failed,
+            sessionStats: this.sessionStats,
+            lifetimeStats: this.stats,
             uptime: Date.now() - this.startTime
         };
     }
@@ -492,7 +506,9 @@ class LoopController extends events_1.EventEmitter {
         this.logger.info(`   状态: ${result.status}`);
         this.logger.info(`   耗时: ${result.duration}ms`);
         if (result.status === 'success') {
+            // Update both stats
             this.stats.completed++;
+            this.sessionStats.completed++;
             this.recordAction(`task_complete:${task.id}`);
             // PR Workflow (if not dry run and has changes)
             if (result.hasChanges && !result.dryRun && this.enableSuperpowers) {
@@ -528,7 +544,9 @@ class LoopController extends events_1.EventEmitter {
             }
             else if (errorResult.fixTaskId) {
                 // Fix task created, mark current as failed
+                // Update both stats
                 this.stats.failed++;
+                this.sessionStats.failed++;
                 this.recordAction(`task_failed:${task.id}`);
                 task.status = 'failed';
                 task.result = result;
@@ -680,7 +698,9 @@ class LoopController extends events_1.EventEmitter {
         return escalationKeywords.some(kw => errorMessage.includes(kw));
     }
     async escalateTask(task, result) {
+        // Update both stats
         this.stats.escalated++;
+        this.sessionStats.escalated++;
         this.recordAction(`task_escalated:${task.id}`);
         task.status = 'escalated';
         task.result = result;
@@ -722,6 +742,7 @@ class LoopController extends events_1.EventEmitter {
             startTime: this.startTime,
             currentTask: this.currentTask,
             stats: this.stats,
+            sessionStats: this.sessionStats, // Add this line
             queueSize: this.taskQueue.getPendingCount(),
             actionHistory: this.actionHistory,
             errors: this.stats.failed,
@@ -745,19 +766,30 @@ class LoopController extends events_1.EventEmitter {
             timestamp: Date.now(),
             currentTask: this.currentTask,
             stats: this.stats,
+            sessionStats: this.sessionStats,
             queueState: await this.taskQueue.getState(),
             hasGeneratedInitialTasks: this.hasGeneratedInitialTasks
         };
         await this.checkpointManager.save(checkpoint);
-        this.logger.debug('💾 检查点已保存');
+        this.logger.debug('💾 Checkpoint saved');
     }
     async loadCheckpoint() {
         const checkpoint = await this.checkpointManager.load();
         if (checkpoint) {
-            this.logger.info('📂 加载检查点');
+            this.logger.info('📂 Loading checkpoint');
+            // Load historical stats (never reset)
             if (checkpoint.stats) {
                 this.stats = checkpoint.stats;
+                this.logger.info(`📊 Historical stats: completed=${this.stats.completed}, failed=${this.stats.failed}`);
             }
+            // Reset session stats for new session
+            this.sessionStats = {
+                completed: 0,
+                failed: 0,
+                escalated: 0,
+                startTime: Date.now()
+            };
+            this.logger.info('🔄 Session stats reset for new session');
             if (checkpoint.queueState) {
                 await this.taskQueue.restoreState(checkpoint.queueState);
             }

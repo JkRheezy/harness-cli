@@ -16,6 +16,11 @@ export interface ExecutionContext {
         failed: number;
         escalated: number;
     };
+    sessionStats: {
+        completed: number;
+        failed: number;
+        escalated: number;
+    };
     queueSize: number;
     errors: number;
     totalAttempts: number;

@@ -51,20 +51,25 @@ class SafetyGuard {
         return { passed: true };
     }
     checkErrorRate(context) {
-        if (context.totalAttempts === 0) {
+        // Use sessionStats for error rate calculation (not cumulative stats)
+        const sessionAttempts = context.sessionStats.completed +
+            context.sessionStats.failed +
+            context.sessionStats.escalated;
+        // Need minimum sample size
+        if (sessionAttempts < 5) {
             return { passed: true };
         }
-        const errorRate = context.errors / context.totalAttempts;
+        const errorRate = context.sessionStats.failed / sessionAttempts;
         if (errorRate > this.config.maxErrorRate) {
             return {
                 passed: false,
                 action: 'stop',
-                reason: `错误率 ${(errorRate * 100).toFixed(1)}% 超过最大限制 ${(this.config.maxErrorRate * 100).toFixed(1)}%`
+                reason: `Session error rate ${(errorRate * 100).toFixed(1)}% (${context.sessionStats.failed}/${sessionAttempts}) exceeds limit ${(this.config.maxErrorRate * 100).toFixed(1)}%`
             };
         }
-        // 警告：错误率超过 50%
+        // Warning: error rate over 50%
         if (errorRate > 0.5) {
-            this.logger.warn(`错误率较高: ${(errorRate * 100).toFixed(1)}%`);
+            this.logger.warn(`Session error rate high: ${(errorRate * 100).toFixed(1)}% (${context.sessionStats.failed}/${sessionAttempts})`);
         }
         return { passed: true };
     }
