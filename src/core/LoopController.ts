@@ -45,6 +45,13 @@ export interface LoopOptions {
   dryRun?: boolean;
 }
 
+export interface SessionStats {
+  completed: number;
+  failed: number;
+  escalated: number;
+  startTime: number;  // Session start timestamp
+}
+
 export class LoopController extends EventEmitter {
   private config: LoopConfig;
   private taskQueue: TaskQueue;
@@ -63,6 +70,13 @@ export class LoopController extends EventEmitter {
     completed: 0,
     failed: 0,
     escalated: 0
+  };
+  
+  private sessionStats: SessionStats = {
+    completed: 0,
+    failed: 0,
+    escalated: 0,
+    startTime: Date.now()
   };
   private actionHistory: string[] = [];
   private hasGeneratedInitialTasks: boolean = false;
