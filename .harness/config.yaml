@@ -1,7 +1,7 @@
 ﻿llm:
   provider: anthropic
   model: kimi-for-coding
-  apiKey: sk-kimi-2mZaQf6fRT3pvQegC3ypQ9uy8gRAgbY2BCnMpwjkMrr6yakzRposNZ15QJuMPAlI
+  apiKey: ${KIMI_API_KEY}
   baseUrl: https://api.kimi.com/coding
   maxTokens: 128000
   temperature: 0.2
@@ -16,7 +16,8 @@ checkpoint:
   enabled: true
   interval: 300000
 
+# GitHub Token 请通过环境变量 GITHUB_TOKEN 设置
 github:
-  token: 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
+  token: ${GITHUB_TOKEN}
 
 projectPath: D:\test\my-project
