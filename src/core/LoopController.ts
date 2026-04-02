@@ -222,8 +222,9 @@ export class LoopController extends EventEmitter {
       }
     }
     
-    this.logger.info('🏁 Loop 已停止');
-    this.logger.info(`📊 统计: 完成${this.stats.completed}, 失败${this.stats.failed}, 升级${this.stats.escalated}`);
+    this.logger.info('🏁 Loop stopped');
+    this.logger.info(`📊 Session stats: completed=${this.sessionStats.completed}, failed=${this.sessionStats.failed}`);
+    this.logger.info(`📊 Lifetime stats: completed=${this.stats.completed}, failed=${this.stats.failed}, escalated=${this.stats.escalated}`);
   }
 
   async stop(): Promise<void> {
@@ -242,8 +243,8 @@ export class LoopController extends EventEmitter {
       loopStatus: this.isRunning ? 'running' : 'stopped',
       activeTasks: this.currentTask ? 1 : 0,
       pendingTasks: await this.taskQueue.getPendingCount(),
-      completedTasks: this.stats.completed,
-      failedTasks: this.stats.failed,
+      sessionStats: this.sessionStats,
+      lifetimeStats: this.stats,
       uptime: Date.now() - this.startTime
     };
   }
