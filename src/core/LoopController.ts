@@ -125,6 +125,14 @@ export class LoopController extends EventEmitter {
     };
 
     this.autoEvolution = new AutoEvolution(this.evolutionConfig, this.taskQueue);
+
+    // Initialize session stats
+    this.sessionStats = {
+      completed: 0,
+      failed: 0,
+      escalated: 0,
+      startTime: Date.now()
+    };
   }
 
   async start(options: LoopOptions): Promise<void> {
@@ -584,7 +592,9 @@ export class LoopController extends EventEmitter {
     this.logger.info(`   耗时: ${result.duration}ms`);
     
     if (result.status === 'success') {
+      // Update both stats
       this.stats.completed++;
+      this.sessionStats.completed++;
       this.recordAction(`task_complete:${task.id}`);
       
       // PR Workflow (if not dry run and has changes)
@@ -630,7 +640,9 @@ export class LoopController extends EventEmitter {
         this.logger.info(`🔄 Task ${task.id} queued for retry (attempt ${task.retryCount})`);
       } else if (errorResult.fixTaskId) {
         // Fix task created, mark current as failed
+        // Update both stats
         this.stats.failed++;
+        this.sessionStats.failed++;
         this.recordAction(`task_failed:${task.id}`);
         task.status = 'failed';
         task.result = result;
@@ -804,7 +816,9 @@ export class LoopController extends EventEmitter {
   }
 
   private async escalateTask(task: any, result: any): Promise<void> {
+    // Update both stats
     this.stats.escalated++;
+    this.sessionStats.escalated++;
     this.recordAction(`task_escalated:${task.id}`);
     
     task.status = 'escalated';
@@ -857,6 +871,7 @@ export class LoopController extends EventEmitter {
       startTime: this.startTime,
       currentTask: this.currentTask,
       stats: this.stats,
+      sessionStats: this.sessionStats,  // Add this line
       queueSize: this.taskQueue.getPendingCount(),
       actionHistory: this.actionHistory,
       errors: this.stats.failed,
