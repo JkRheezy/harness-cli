@@ -4,9 +4,9 @@ exports.DesignPhase = void 0;
 const Logger_1 = require("../utils/Logger");
 const SkillInvoker_1 = require("../utils/SkillInvoker");
 class DesignPhase {
-    constructor(autoDesign = true) {
+    constructor(autoDesign = true, skillsPath) {
         this.logger = new Logger_1.Logger();
-        this.skillInvoker = new SkillInvoker_1.SkillInvoker();
+        this.skillInvoker = new SkillInvoker_1.SkillInvoker(skillsPath);
         this.autoDesign = autoDesign;
     }
     /**

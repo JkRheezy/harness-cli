@@ -39,9 +39,8 @@ export class ReviewAgent {
         baseURL: config.baseUrl
       });
     } else if (config.provider === 'anthropic') {
-      this.anthropic = new Anthropic({
-        apiKey: config.apiKey
-      });
+      // Kimi Coding Plan 使用 fetch 直接调用
+      this.config = config;
     }
   }
 
@@ -562,16 +561,34 @@ Respond in JSON format:
       
       return response.choices[0]?.message?.content || '';
       
-    } else if (this.config.provider === 'anthropic' && this.anthropic) {
-      const response = await this.anthropic.messages.create({
-        model: this.config.model,
-        max_tokens: this.config.maxTokens,
-        temperature: 0.2,
-        messages: [{ role: 'user', content: prompt }]
+    } else if (this.config.provider === 'anthropic') {
+      // Kimi Coding Plan 使用 fetch 直接调用
+      const response = await fetch(`${this.config.baseUrl}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.config.apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: this.config.model,
+          max_tokens: this.config.maxTokens,
+          temperature: 0.2,
+          messages: [{ role: 'user', content: prompt }]
+        })
       });
       
-      const content = response.content[0];
-      return content && 'text' in content ? content.text : '';
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      if (data.content && data.content.length > 0) {
+        const textContent = data.content.find((c: any) => c.type === 'text');
+        return textContent?.text || '';
+      }
+      return '';
     }
     
     throw new Error(`Unsupported provider: ${this.config.provider}`);

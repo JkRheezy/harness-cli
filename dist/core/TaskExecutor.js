@@ -60,6 +60,7 @@ class TaskExecutor {
             });
         }
         else if (config.provider === 'anthropic') {
+            // Kimi Coding Plan 使用 Anthropic 兼容接口
             this.anthropic = new sdk_1.default({
                 apiKey: config.apiKey,
                 baseURL: config.baseUrl
@@ -382,11 +383,34 @@ class TaskExecutor {
     }
     async createBranch(task) {
         const branchName = `harness/${task.id}`;
+        // 先检查 git 状态，排除日志文件
+        const status = await this.git.status();
+        const filesToAdd = status.files
+            .filter(f => !f.path.startsWith('logs/') && !f.path.endsWith('.log'))
+            .map(f => f.path);
+        if (filesToAdd.length === 0) {
+            this.logger.info('ℹ️ 没有代码变更需要提交');
+            return branchName;
+        }
         await this.git.checkoutLocalBranch(branchName);
-        await this.git.add('.');
+        // 只添加非日志文件
+        for (const file of filesToAdd) {
+            try {
+                await this.git.add(file);
+            }
+            catch (e) {
+                this.logger.warn(`⚠️ 无法添加文件 ${file}: ${e}`);
+            }
+        }
+        // 检查是否有 staged 文件（通过 raw 命令）
+        const { stdout: stagedFiles } = await this.runCommand('git diff --cached --name-only');
+        if (!stagedFiles || stagedFiles.trim().length === 0) {
+            this.logger.info('ℹ️ 没有代码变更需要提交（仅日志文件变更）');
+            return branchName;
+        }
         await this.git.commit(`[Auto] ${task.title}\n\nTask: ${task.id}`);
         await this.git.push('origin', branchName);
-        this.logger.info(`🔀 创建分支: ${branchName}`);
+        this.logger.info(`🔀 创建分支: ${branchName} (${filesToAdd.length} 个文件)`);
         return branchName;
     }
     async callLLM(prompt, retries = 2) {
@@ -398,28 +422,50 @@ class TaskExecutor {
                     this.logger.info(`Retry attempt ${attempt}/${retries}...`);
                     await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                 }
-                // Anthropic 使用 SDK（配合 HTTP_PROXY 环境变量）
-                if (this.config.provider === 'anthropic' && this.anthropic) {
-                    this.logger.info(`Sending Anthropic request (timeout: ${timeout}ms)...`);
-                    // 创建超时 Promise
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error(`LLM call timeout after ${timeout}ms`)), timeout));
-                    // 创建 API 调用 Promise
-                    const apiPromise = this.anthropic.messages.create({
-                        model: this.config.model,
-                        max_tokens: this.config.maxTokens,
-                        temperature: this.config.temperature,
-                        messages: [
-                            { role: 'user', content: this.getSystemPrompt() + '\n\n' + prompt }
-                        ]
-                    });
-                    this.logger.info('Waiting for Anthropic response...');
-                    const response = await Promise.race([apiPromise, timeoutPromise]);
-                    this.logger.info('Anthropic response received');
-                    const content = response.content[0];
-                    return content && 'text' in content ? content.text : '';
+                // Anthropic / Kimi Coding 使用 fetch 直接调用
+                if (this.config.provider === 'anthropic') {
+                    this.logger.info(`Sending Kimi Coding request via fetch...`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeout);
+                    try {
+                        const response = await fetch(`${this.config.baseUrl}/v1/messages`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'x-api-key': this.config.apiKey,
+                                'anthropic-version': '2023-06-01'
+                            },
+                            body: JSON.stringify({
+                                model: this.config.model,
+                                max_tokens: this.config.maxTokens,
+                                temperature: this.config.temperature,
+                                messages: [
+                                    { role: 'user', content: this.getSystemPrompt() + '\n\n' + prompt }
+                                ]
+                            }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        }
+                        const data = await response.json();
+                        this.logger.info('Kimi Coding response received');
+                        // 解析 Anthropic 格式的响应
+                        if (data.content && data.content.length > 0) {
+                            const textContent = data.content.find((c) => c.type === 'text');
+                            return textContent?.text || '';
+                        }
+                        return '';
+                    }
+                    catch (error) {
+                        clearTimeout(timeoutId);
+                        throw error;
+                    }
                 }
-                // OpenAI / Kimi 使用 SDK
-                if ((this.config.provider === 'openai' || this.config.provider === 'kimi') && this.openai) {
+                // OpenAI 使用 SDK
+                if (this.config.provider === 'openai' && this.openai) {
                     this.logger.info(`Sending OpenAI request (timeout: ${timeout}ms)...`);
                     // 创建超时 Promise
                     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error(`LLM call timeout after ${timeout}ms`)), timeout));
@@ -438,6 +484,44 @@ class TaskExecutor {
                     const response = await Promise.race([apiPromise, timeoutPromise]);
                     this.logger.info('OpenAI response received');
                     return response.choices[0]?.message?.content || '';
+                }
+                // Kimi 使用 OpenAI 兼容接口（fetch）
+                if (this.config.provider === 'kimi') {
+                    this.logger.info(`Sending Kimi request via fetch...`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeout);
+                    try {
+                        const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.config.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: this.config.model,
+                                messages: [
+                                    { role: 'system', content: this.getSystemPrompt() },
+                                    ...this.context,
+                                    { role: 'user', content: prompt }
+                                ],
+                                max_tokens: this.config.maxTokens,
+                                temperature: this.config.temperature
+                            }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        }
+                        const data = await response.json();
+                        this.logger.info('Kimi response received');
+                        return data.choices[0]?.message?.content || '';
+                    }
+                    catch (error) {
+                        clearTimeout(timeoutId);
+                        throw error;
+                    }
                 }
                 throw new Error(`Unsupported provider: ${this.config.provider}`);
             }

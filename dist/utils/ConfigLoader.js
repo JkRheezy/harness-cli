@@ -84,6 +84,13 @@ class ConfigLoader {
         if (overrides.businessContext) {
             merged.businessContext = overrides.businessContext;
         }
+        // Merge superpowers config if provided
+        if (overrides.superpowers) {
+            merged.superpowers = {
+                ...defaults.superpowers,
+                ...overrides.superpowers
+            };
+        }
         // 替换环境变量占位符 ${ENV_VAR}
         this.resolveEnvVariables(merged);
         return merged;

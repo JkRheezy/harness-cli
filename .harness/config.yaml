@@ -1,5 +1,5 @@
 ﻿llm:
-  provider: anthropic
+  provider: kimi
   model: kimi-for-coding
   apiKey: ${KIMI_API_KEY}
   baseUrl: https://api.kimi.com/coding

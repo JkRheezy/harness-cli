@@ -3,7 +3,7 @@ export declare class DesignPhase {
     private logger;
     private skillInvoker;
     private autoDesign;
-    constructor(autoDesign?: boolean);
+    constructor(autoDesign?: boolean, skillsPath?: string);
     /**
      * Run complete design phase for a task
      */

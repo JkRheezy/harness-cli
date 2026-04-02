@@ -14,7 +14,8 @@ export class PRWorkflow {
     this.reviewAgent = new ReviewAgent({
       provider: 'anthropic',
       model: 'kimi-for-coding',
-      apiKey: process.env.KIMI_API_KEY || '',
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+      baseUrl: 'https://api.kimi.com/coding/',
       maxTokens: 128000,
       temperature: 0.2,
       timeout: 300000

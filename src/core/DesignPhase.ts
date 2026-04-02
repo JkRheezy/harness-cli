@@ -7,9 +7,9 @@ export class DesignPhase {
   private skillInvoker: SkillInvoker;
   private autoDesign: boolean;
 
-  constructor(autoDesign: boolean = true) {
+  constructor(autoDesign: boolean = true, skillsPath?: string) {
     this.logger = new Logger();
-    this.skillInvoker = new SkillInvoker();
+    this.skillInvoker = new SkillInvoker(skillsPath);
     this.autoDesign = autoDesign;
   }
 

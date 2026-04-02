@@ -82,8 +82,9 @@ class LoopController extends events_1.EventEmitter {
         this.safetyGuard = new SafetyGuard_1.SafetyGuard(config.safety);
         this.checkpointManager = new CheckpointManager_1.CheckpointManager();
         // Initialize Superpowers components
-        this.enableSuperpowers = true; // Can be from config
-        this.designPhase = new DesignPhase_1.DesignPhase(true);
+        this.enableSuperpowers = config.superpowers?.enabled ?? true;
+        const skillsPath = config.superpowers?.skillsPath;
+        this.designPhase = new DesignPhase_1.DesignPhase(true, skillsPath);
         this.prWorkflow = new PRWorkflow_1.PRWorkflow();
         this.errorHandler = new ResilientLoop_1.ResilientErrorHandler(3);
         // Initialize auto-evolution

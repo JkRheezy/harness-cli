@@ -23,6 +23,10 @@ export interface LoopConfig {
     projectPath?: string;
     evolution?: EvolutionConfig;
     orchestration?: OrchestrationConfig;
+    superpowers?: {
+        enabled?: boolean;
+        skillsPath?: string;
+    };
 }
 export interface LoopOptions {
     maxDuration: number;

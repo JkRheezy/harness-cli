@@ -71,7 +71,9 @@ class TaskQueue {
             if (priorityDiff !== 0)
                 return priorityDiff;
             // 然后按创建时间排序（先创建的先处理）
-            return a.createdAt.getTime() - b.createdAt.getTime();
+            const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+            const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+            return dateA.getTime() - dateB.getTime();
         });
     }
 }

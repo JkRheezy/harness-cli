@@ -41,6 +41,10 @@ export interface LoopConfig {
   projectPath?: string;
   evolution?: EvolutionConfig;
   orchestration?: OrchestrationConfig;
+  superpowers?: {
+    enabled?: boolean;
+    skillsPath?: string;
+  };
 }
 
 export interface LoopOptions {
@@ -111,8 +115,9 @@ export class LoopController extends EventEmitter {
     this.checkpointManager = new CheckpointManager();
     
     // Initialize Superpowers components
-    this.enableSuperpowers = true; // Can be from config
-    this.designPhase = new DesignPhase(true);
+    this.enableSuperpowers = config.superpowers?.enabled ?? true;
+    const skillsPath = config.superpowers?.skillsPath;
+    this.designPhase = new DesignPhase(true, skillsPath);
     this.prWorkflow = new PRWorkflow();
     this.errorHandler = new ResilientErrorHandler(3);
 
