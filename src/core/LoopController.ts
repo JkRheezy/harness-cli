@@ -898,25 +898,35 @@ export class LoopController extends EventEmitter {
       timestamp: Date.now(),
       currentTask: this.currentTask,
       stats: this.stats,
+      sessionStats: this.sessionStats,
       queueState: await this.taskQueue.getState(),
       hasGeneratedInitialTasks: this.hasGeneratedInitialTasks
     };
     
     await this.checkpointManager.save(checkpoint);
-    this.logger.debug('💾 检查点已保存');
+    this.logger.debug('💾 Checkpoint saved');
   }
 
   private async loadCheckpoint(): Promise<void> {
     const checkpoint = await this.checkpointManager.load();
     
     if (checkpoint) {
-      this.logger.info('📂 加载检查点');
+      this.logger.info('📂 Loading checkpoint');
       
+      // Load historical stats (never reset)
       if (checkpoint.stats) {
-        // 保留完整的执行历史 - checkpoint 是真相来源
         this.stats = checkpoint.stats;
-        this.logger.info(`📊 恢复执行历史: 完成${this.stats.completed}, 失败${this.stats.failed}`);
+        this.logger.info(`📊 Historical stats: completed=${this.stats.completed}, failed=${this.stats.failed}`);
       }
+      
+      // Reset session stats for new session
+      this.sessionStats = {
+        completed: 0,
+        failed: 0,
+        escalated: 0,
+        startTime: Date.now()
+      };
+      this.logger.info('🔄 Session stats reset for new session');
       
       if (checkpoint.queueState) {
         await this.taskQueue.restoreState(checkpoint.queueState);
