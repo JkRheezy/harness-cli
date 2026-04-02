@@ -7,6 +7,7 @@ import { PRAutomator } from './core/PRAutomator';
 import { ReviewAgent } from './core/ReviewAgent';
 import { ConfigLoader } from './utils/ConfigLoader';
 import { Logger } from './utils/Logger';
+import visualizeCommand from './commands/visualize';
 
 const program = new Command();
 const logger = new Logger();
@@ -285,5 +286,8 @@ function formatDuration(ms: number): string {
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
   return `${hours}小时${minutes}分钟`;
 }
+
+// ========== 可视化命令 ==========
+program.addCommand(visualizeCommand);
 
 program.parse();
