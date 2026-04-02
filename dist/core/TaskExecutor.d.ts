@@ -20,6 +20,8 @@ export declare class TaskExecutor {
     private logger;
     private context;
     private workingDir;
+    private devServerManager;
+    private devServerUrl;
     constructor(config: LLMConfig, workingDir?: string);
     execute(task: any, options?: ExecuteOptions): Promise<any>;
     private prepareContext;
@@ -31,9 +33,9 @@ export declare class TaskExecutor {
      */
     private runBrowserValidation;
     /**
-     * Detect running dev server
+     * 停止开发服务器（在任务完成后调用）
      */
-    private detectDevServer;
+    stopDevServer(): Promise<void>;
     /**
      * Check if file exists
      */

@@ -134,7 +134,7 @@ export class LoopController extends EventEmitter {
       }
     };
 
-    this.autoEvolution = new AutoEvolution(this.evolutionConfig, this.taskQueue);
+    this.autoEvolution = new AutoEvolution(this.evolutionConfig, this.taskQueue, workingDir);
 
     // Initialize session stats
     this.sessionStats = {

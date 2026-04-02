@@ -43,14 +43,17 @@ const simple_git_1 = require("simple-git");
 const Logger_1 = require("../utils/Logger");
 const ToolRegistry_1 = require("../tools/ToolRegistry");
 const BrowserValidator_1 = require("../browser/BrowserValidator");
+const DevServerManager_1 = require("../utils/DevServerManager");
 class TaskExecutor {
     constructor(config, workingDir = process.cwd()) {
         this.context = [];
+        this.devServerUrl = null;
         this.config = config;
         this.workingDir = workingDir;
         this.logger = new Logger_1.Logger();
         this.git = (0, simple_git_1.simpleGit)(workingDir);
         this.toolRegistry = new ToolRegistry_1.ToolRegistry();
+        this.devServerManager = new DevServerManager_1.DevServerManager();
         // 初始化 LLM 客户端
         if (config.provider === 'openai' || config.provider === 'kimi') {
             // Kimi 使用 OpenAI 兼容接口
@@ -132,6 +135,10 @@ class TaskExecutor {
                 canRetry: this.shouldRetry(error),
                 duration: Date.now() - startTime
             };
+        }
+        finally {
+            // 停止开发服务器
+            await this.stopDevServer();
         }
     }
     async prepareContext(task) {
@@ -306,21 +313,20 @@ class TaskExecutor {
             this.logger.info('📦 No package.json found, skipping browser validation');
             return null;
         }
-        const hasNextConfig = await this.fileExists('next.config.js') ||
-            await this.fileExists('next.config.ts') ||
-            await this.fileExists('next.config.mjs');
-        if (!hasNextConfig) {
-            this.logger.info('🌐 Not a Next.js app, skipping browser validation');
-            return null;
-        }
         this.logger.info('🌐 Starting browser validation...');
-        const validator = new BrowserValidator_1.BrowserValidator();
         try {
-            const devServerUrl = await this.detectDevServer();
+            // 自动启动或复用开发服务器
+            let devServerUrl = this.devServerUrl;
             if (!devServerUrl) {
-                this.logger.warn('⚠️ Dev server not detected, skipping browser validation');
-                return null;
+                devServerUrl = await this.devServerManager.start({
+                    timeout: 120000, // 2分钟超时
+                    port: 3000
+                });
+                this.devServerUrl = devServerUrl;
+                this.logger.info(`✅ Dev server ready at ${devServerUrl}`);
             }
+            // 执行浏览器验证
+            const validator = new BrowserValidator_1.BrowserValidator();
             const result = await validator.validate({
                 url: devServerUrl,
                 takeScreenshot: true,
@@ -343,30 +349,27 @@ class TaskExecutor {
         }
         catch (error) {
             this.logger.error('❌ Browser validation failed:', error.message);
-            return null;
+            return {
+                success: false,
+                url: '',
+                screenshotPath: undefined,
+                consoleErrors: [],
+                networkErrors: [],
+                accessibilityIssues: [],
+                performanceMetrics: undefined,
+                domSnapshot: undefined
+            };
         }
     }
     /**
-     * Detect running dev server
+     * 停止开发服务器（在任务完成后调用）
      */
-    async detectDevServer() {
-        const ports = [3000, 3001, 5173, 5174, 8080];
-        for (const port of ports) {
-            try {
-                const response = await fetch(`http://localhost:${port}`, {
-                    method: 'HEAD',
-                    signal: AbortSignal.timeout(2000)
-                });
-                if (response.ok) {
-                    this.logger.info(`🌐 Dev server detected on port ${port}`);
-                    return `http://localhost:${port}`;
-                }
-            }
-            catch {
-                // Port not available, try next
-            }
+    async stopDevServer() {
+        if (this.devServerUrl) {
+            await this.devServerManager.stop();
+            this.devServerUrl = null;
+            this.logger.info('✅ Dev server stopped');
         }
-        return null;
     }
     /**
      * Check if file exists

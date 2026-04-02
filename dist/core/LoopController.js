@@ -99,7 +99,7 @@ class LoopController extends events_1.EventEmitter {
                 ux: true
             }
         };
-        this.autoEvolution = new AutoEvolution_1.AutoEvolution(this.evolutionConfig, this.taskQueue);
+        this.autoEvolution = new AutoEvolution_1.AutoEvolution(this.evolutionConfig, this.taskQueue, workingDir);
         // Initialize session stats
         this.sessionStats = {
             completed: 0,
