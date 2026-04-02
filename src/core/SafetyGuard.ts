@@ -20,6 +20,11 @@ export interface ExecutionContext {
     failed: number;
     escalated: number;
   };
+  sessionStats: {
+    completed: number;
+    failed: number;
+    escalated: number;
+  };
   queueSize: number;
   errors: number;
   totalAttempts: number;
@@ -86,34 +91,29 @@ export class SafetyGuard {
   }
 
   private checkErrorRate(context: ExecutionContext): SafetyCheck {
-    // 样本不足时不检查错误率
-    if (context.totalAttempts < 5) {
+    // Use sessionStats for error rate calculation (not cumulative stats)
+    const sessionAttempts = context.sessionStats.completed + 
+                           context.sessionStats.failed + 
+                           context.sessionStats.escalated;
+    
+    // Need minimum sample size
+    if (sessionAttempts < 5) {
       return { passed: true };
     }
     
-    // 使用滑动窗口：只计算最近10个任务的错误率
-    // 而不是累积所有历史任务的错误率
-    const windowSize = Math.min(10, context.totalAttempts);
-    
-    // 从 actionHistory 中提取最近的任务结果
-    const recentActions = context.actionHistory.slice(-windowSize);
-    const recentErrors = recentActions.filter(action => 
-      action.includes('task_failed') || action.includes('task_escalated')
-    ).length;
-    
-    const errorRate = recentErrors / windowSize;
+    const errorRate = context.sessionStats.failed / sessionAttempts;
     
     if (errorRate > this.config.maxErrorRate) {
       return {
         passed: false,
         action: 'stop',
-        reason: `最近${windowSize}个任务错误率 ${(errorRate * 100).toFixed(1)}% 超过最大限制 ${(this.config.maxErrorRate * 100).toFixed(1)}%`
+        reason: `Session error rate ${(errorRate * 100).toFixed(1)}% (${context.sessionStats.failed}/${sessionAttempts}) exceeds limit ${(this.config.maxErrorRate * 100).toFixed(1)}%`
       };
     }
     
-    // 警告：错误率超过 50%
+    // Warning: error rate over 50%
     if (errorRate > 0.5) {
-      this.logger.warn(`最近${windowSize}个任务错误率较高: ${(errorRate * 100).toFixed(1)}%`);
+      this.logger.warn(`Session error rate high: ${(errorRate * 100).toFixed(1)}% (${context.sessionStats.failed}/${sessionAttempts})`);
     }
     
     return { passed: true };
