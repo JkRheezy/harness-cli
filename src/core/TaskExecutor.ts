@@ -721,14 +721,17 @@ Example:
     }
     
     const fs = await import('fs/promises');
-    const content = await fs.readFile(path, 'utf-8');
+    const pathModule = await import('path');
+    const fullPath = pathModule.join(this.workingDir, path);
+    
+    const content = await fs.readFile(fullPath, 'utf-8');
     
     if (!content.includes(oldString)) {
       throw new Error(`String not found in file: ${oldString}`);
     }
     
     const newContent = content.replace(oldString, newString);
-    await fs.writeFile(path, newContent, 'utf-8');
+    await fs.writeFile(fullPath, newContent, 'utf-8');
     this.logger.info(`✏️  编辑文件: ${path}`);
   }
 
