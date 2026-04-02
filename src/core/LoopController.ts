@@ -16,6 +16,8 @@ import { DesignResult, PRWorkflowResult } from '../types/superpowers';
 import { AutoEvolution } from '../evolution/AutoEvolution';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
 import { EvolutionTask } from '../evolution/AutoEvolution';
+import { HarnessGraph } from '../orchestration/graph/HarnessGraph';
+import { OrchestrationConfig } from '../types/orchestration';
 
 export interface LoopConfig {
   llm: {
@@ -38,6 +40,7 @@ export interface LoopConfig {
   };
   projectPath?: string;
   evolution?: EvolutionConfig;
+  orchestration?: OrchestrationConfig;
 }
 
 export interface LoopOptions {
@@ -87,6 +90,8 @@ export class LoopController extends EventEmitter {
   private autoEvolution: AutoEvolution;
   private evolutionConfig: EvolutionConfig;
   private businessContext?: BusinessContext;
+  private useLangGraph: boolean;
+  private harnessGraph?: HarnessGraph;
 
   constructor(config: LoopConfig) {
     super();
@@ -133,6 +138,47 @@ export class LoopController extends EventEmitter {
       escalated: 0,
       startTime: Date.now()
     };
+
+    // Initialize LangGraph
+    this.useLangGraph = config.orchestration !== undefined;
+    if (this.useLangGraph) {
+      this.initializeLangGraph();
+    }
+  }
+
+  private initializeLangGraph(): void {
+    const orchestrationConfig = this.config.orchestration || {
+      enableHumanReview: false,
+      enableParallelExecution: false,
+      enableABTesting: false,
+      maxParallelAgents: 3,
+      reviewTimeoutMs: 300000
+    };
+    this.harnessGraph = new HarnessGraph(orchestrationConfig, {
+      llmConfig: this.config.llm,
+      workingDir: this.config.projectPath || process.cwd()
+    });
+  }
+
+  async getArchitectureDiagram(): Promise<string> {
+    if (!this.useLangGraph || !this.harnessGraph) {
+      return this.getLegacyArchitectureDescription();
+    }
+    return this.harnessGraph.getMermaidDiagram();
+  }
+
+  async saveArchitectureDiagram(outputPath: string): Promise<void> {
+    const diagram = await this.getArchitectureDiagram();
+    await fs.writeFile(outputPath, diagram, 'utf-8');
+  }
+
+  private getLegacyArchitectureDescription(): string {
+    return `graph TD
+    Start[Start] --> TaskQueue[Task Queue]
+    TaskQueue --> Executor[Task Executor]
+    Executor --> Review[Review Agent]
+    Review --> PR[PR Automator]
+    PR --> End[End]`;
   }
 
   async start(options: LoopOptions): Promise<void> {
