@@ -14,7 +14,7 @@ export class TemplateRegistry {
 
   /**
    * Get a template for a specific layer and tech stack
-   * Falls back to 'default' template if specific tech stack not found
+   * Falls back through progressively more generic keys, then to 'default'
    */
   getTemplate(layer: LayerName, techStack: TechStackChoice): LayerTemplate | undefined {
     const layerTemplates = this.templates.get(layer);
@@ -22,14 +22,42 @@ export class TemplateRegistry {
       return undefined;
     }
 
-    // Try specific tech stack key first
-    const key = this.buildKey(techStack);
-    if (layerTemplates.has(key)) {
-      return layerTemplates.get(key);
+    // Try progressively more generic keys
+    const keys = this.buildFallbackKeys(techStack);
+    for (const key of keys) {
+      if (layerTemplates.has(key)) {
+        return layerTemplates.get(key);
+      }
     }
 
-    // Fall back to default template
+    // Final fallback to default template
     return layerTemplates.get('default');
+  }
+
+  /**
+   * Build a list of fallback keys from most specific to most generic
+   */
+  private buildFallbackKeys(techStack: TechStackChoice): string[] {
+    const keys: string[] = [];
+    const parts: string[] = [techStack.language];
+
+    // Start with most specific key
+    if (techStack.database && techStack.database !== 'none') {
+      const withDb = [...parts, techStack.database];
+      if (techStack.frontend && techStack.frontend !== 'none') {
+        keys.push([...withDb, techStack.frontend].join('-'));
+      }
+      keys.push(withDb.join('-'));
+    }
+
+    if (techStack.frontend && techStack.frontend !== 'none') {
+      keys.push([...parts, techStack.frontend].join('-'));
+    }
+
+    // Finally add just the language
+    keys.push(techStack.language);
+
+    return keys;
   }
 
   /**
@@ -137,6 +165,40 @@ export function loadConfig(): Config {
 }
 
 export const config = loadConfig();
+`,
+          variables: ['projectName']
+        }
+      ]
+    });
+
+    // Layer 3: repo (default - no specific database)
+    this.registerTemplate('repo', 'default', {
+      name: 'repo',
+      description: 'Data access and repositories - Layer 3',
+      directory: 'src/repo',
+      dependencies: ['types', 'config'],
+      files: [
+        {
+          path: 'index.ts',
+          template: `// Layer 3: Repository Layer - {{projectName}}
+// Data access and persistence
+
+export * from './repositories';
+`,
+          variables: ['projectName']
+        },
+        {
+          path: 'repositories/index.ts',
+          template: `// Repository Exports - {{projectName}}
+// Concrete repository implementations
+
+export interface Repository<T> {
+  findById(id: string): Promise<T | null>;
+  findAll(): Promise<T[]>;
+  create(data: Partial<T>): Promise<T>;
+  update(id: string, data: Partial<T>): Promise<T>;
+  delete(id: string): Promise<void>;
+}
 `,
           variables: ['projectName']
         }

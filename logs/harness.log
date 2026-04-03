@@ -4467,3 +4467,876 @@ Pushing to https://github.com/JkRheezy/pin-ecommerce.git
 2026-04-03T08:32:40.465Z info: SmartTaskGenerator initialized
 2026-04-03T08:32:40.467Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
 2026-04-03T08:32:40.471Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:27.796Z info: 🎨 Starting design phase for: Test Task
+2026-04-03T08:42:27.798Z info: 🧠 Running brainstorming...
+2026-04-03T08:42:27.803Z warn: Brainstorming skill not found, using fallback
+2026-04-03T08:42:27.803Z info: 📝 Running planning...
+2026-04-03T08:42:27.806Z warn: Writing-plans skill not found, using fallback
+2026-04-03T08:42:28.356Z info: 🔧 Invoking skill: non-existent
+2026-04-03T08:42:28.359Z warn: Skill non-existent not found at .config/agents/skills/non-existent
+2026-04-03T08:42:28.298Z info: 🔍 Starting requirement discovery analysis...
+2026-04-03T08:42:28.312Z info: 🔍 Starting requirement discovery analysis...
+2026-04-03T08:42:28.325Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.330Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.333Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.336Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.339Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.342Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.344Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.349Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.352Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.355Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.358Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.360Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.362Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.366Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.369Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.380Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.377Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.382Z info: 🔍 Starting requirement discovery analysis...
+2026-04-03T08:42:28.395Z info: 🔍 Starting requirement discovery analysis...
+2026-04-03T08:42:28.401Z info: 🔍 Starting requirement discovery analysis...
+2026-04-03T08:42:28.299Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.301Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.302Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.303Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.303Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.304Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.305Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.305Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.306Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.306Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.307Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.307Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.308Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.308Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.309Z info: ✅ Requirement discovery complete: 10 gaps found in 10ms
+2026-04-03T08:42:28.313Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.313Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.313Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.314Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.314Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.314Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.315Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.315Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.316Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.320Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.321Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.325Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.330Z info:   ✅ Module found: 用户系统
+2026-04-03T08:42:28.321Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.333Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.326Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.330Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.322Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.334Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.331Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.334Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.322Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.331Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.334Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.322Z info: ✅ Requirement discovery complete: 10 gaps found in 10ms
+2026-04-03T08:42:28.331Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.334Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.336Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.339Z warn:   ⚠️ API gap: order depends on missing payment
+2026-04-03T08:42:28.344Z warn:   ⚠️ API gap: cart depends on missing product
+2026-04-03T08:42:28.339Z warn:   ⚠️ API gap: order depends on missing cart
+2026-04-03T08:42:28.336Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.340Z warn:   ⚠️ API gap: order depends on missing product
+2026-04-03T08:42:28.344Z warn:   ⚠️ API gap: cart depends on missing user
+2026-04-03T08:42:28.337Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.350Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.345Z warn:   ⚠️ API gap: order depends on missing payment
+2026-04-03T08:42:28.350Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.337Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.352Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.350Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.337Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.353Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.355Z info:   ✅ Flow step found: 浏览商品
+2026-04-03T08:42:28.350Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.353Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.356Z info:   ✅ Flow step found: 加购
+2026-04-03T08:42:28.326Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.358Z info:   ✅ Flow step found: 浏览商品
+2026-04-03T08:42:28.353Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.356Z info:   ✅ Flow step found: 结算
+2026-04-03T08:42:28.327Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.358Z info:   ✅ Flow step found: 加购
+2026-04-03T08:42:28.360Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.356Z info:   ✅ Flow step found: 支付
+2026-04-03T08:42:28.327Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.359Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.362Z info:   📄 Found schema: prisma/schema.prisma
+2026-04-03T08:42:28.369Z info:   📄 Found schema: prisma/schema.prisma
+2026-04-03T08:42:28.366Z info:   📄 Found schema: prisma/schema.prisma
+2026-04-03T08:42:28.359Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.363Z warn:   ⚠️ Missing model: User
+2026-04-03T08:42:28.370Z info:   ✅ Model found: User
+2026-04-03T08:42:28.366Z info:   ✅ Model found: User
+2026-04-03T08:42:28.381Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.363Z warn:   ⚠️ Missing model: Product
+2026-04-03T08:42:28.370Z info:   ✅ Model found: Product
+2026-04-03T08:42:28.367Z info:   ✅ Model found: Product
+2026-04-03T08:42:28.377Z info:   📄 Found schema: prisma/schema.prisma
+2026-04-03T08:42:28.364Z warn:   ⚠️ Missing model: Order
+2026-04-03T08:42:28.370Z info:   ✅ Model found: Order
+2026-04-03T08:42:28.367Z warn:   ⚠️ Missing model: Order
+2026-04-03T08:42:28.377Z info:   ✅ Model found: User
+2026-04-03T08:42:28.364Z warn:   ⚠️ Missing model: Cart
+2026-04-03T08:42:28.374Z info:   ✅ Model found: Cart
+2026-04-03T08:42:28.367Z warn:   ⚠️ Missing model: Cart
+2026-04-03T08:42:28.378Z warn:   ⚠️ Missing model: Product
+2026-04-03T08:42:28.364Z warn:   ⚠️ Missing model: Payment
+2026-04-03T08:42:28.368Z warn:   ⚠️ Missing model: Payment
+2026-04-03T08:42:28.378Z info:   ✅ Model found: Order
+2026-04-03T08:42:28.375Z info:   ✅ Model found: Payment
+2026-04-03T08:42:28.383Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.396Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.378Z warn:   ⚠️ Missing model: Cart
+2026-04-03T08:42:28.375Z warn:   ⚠️ Models lack relationships
+2026-04-03T08:42:28.383Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.396Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.379Z warn:   ⚠️ Missing model: Payment
+2026-04-03T08:42:28.383Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.401Z info: 📦 Analyzing architecture completeness...
+2026-04-03T08:42:28.396Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.384Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.401Z info: 🌐 Analyzing API completeness...
+2026-04-03T08:42:28.397Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.384Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.402Z info: 👤 Analyzing user flows...
+2026-04-03T08:42:28.397Z info:   ✅ Module found: 用户系统
+2026-04-03T08:42:28.385Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.402Z info: 🗄️ Analyzing data models...
+2026-04-03T08:42:28.397Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.385Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.402Z warn:   ⚠️ No Prisma schema found
+2026-04-03T08:42:28.397Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.385Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.402Z warn:   ⚠️ Missing flow step: 浏览商品
+2026-04-03T08:42:28.398Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.386Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.402Z warn:   ⚠️ Missing module: 用户系统
+2026-04-03T08:42:28.398Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.386Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.402Z warn:   ⚠️ Missing flow step: 加购
+2026-04-03T08:42:28.398Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.386Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.403Z warn:   ⚠️ Missing module: 商品系统
+2026-04-03T08:42:28.398Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.386Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.403Z warn:   ⚠️ Missing flow step: 结算
+2026-04-03T08:42:28.399Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.386Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.403Z warn:   ⚠️ Missing module: 购物车
+2026-04-03T08:42:28.399Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.387Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.403Z warn:   ⚠️ Missing flow step: 支付
+2026-04-03T08:42:28.399Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.387Z info: ✅ Requirement discovery complete: 10 gaps found in 5ms
+2026-04-03T08:42:28.403Z warn:   ⚠️ Missing module: 订单系统
+2026-04-03T08:42:28.400Z info: ✅ Requirement discovery complete: 8 gaps found in 4ms
+2026-04-03T08:42:28.404Z warn:   ⚠️ Missing module: 支付系统
+2026-04-03T08:42:28.404Z info: ✅ Requirement discovery complete: 10 gaps found in 3ms
+2026-04-03T08:42:29.081Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.094Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.097Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.102Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.105Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.122Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.112Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.117Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.132Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.138Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.125Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.144Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.140Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.129Z info: SmartTaskGenerator initialized
+2026-04-03T08:42:29.145Z info: 📁 Working directory: D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli
+2026-04-03T08:42:29.150Z info: SmartTaskGenerator initialized
+2026-04-03T08:48:42.191Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.225Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.214Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.234Z info: Starting bootstrap for project: my-awesome-app
+2026-04-03T08:48:42.263Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.248Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.287Z info: Starting bootstrap for project: MyProject
+2026-04-03T08:48:42.305Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.279Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.307Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.309Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.321Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.329Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.341Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.350Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.358Z info: Starting bootstrap for project: test-app
+2026-04-03T08:48:42.192Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-ur1jKD\my-project
+2026-04-03T08:48:42.192Z info: Generating layer: types
+2026-04-03T08:48:42.194Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.194Z info: Generating layer: config
+2026-04-03T08:48:42.195Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.195Z info: Generating layer: repo
+2026-04-03T08:48:42.195Z warn: No template found for layer: repo
+2026-04-03T08:48:42.195Z info: Generating layer: service
+2026-04-03T08:48:42.196Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.196Z info: Generating layer: runtime
+2026-04-03T08:48:42.197Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.197Z info: Generating layer: ui
+2026-04-03T08:48:42.197Z warn: No template found for layer: ui
+2026-04-03T08:48:42.199Z info: Generated 3 root config files
+2026-04-03T08:48:42.199Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.226Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-xxzxgL\my-project
+2026-04-03T08:48:42.226Z info: Generating layer: types
+2026-04-03T08:48:42.227Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.227Z info: Generating layer: config
+2026-04-03T08:48:42.227Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.227Z info: Generating layer: repo
+2026-04-03T08:48:42.227Z warn: No template found for layer: repo
+2026-04-03T08:48:42.227Z info: Generating layer: service
+2026-04-03T08:48:42.228Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.228Z info: Generating layer: runtime
+2026-04-03T08:48:42.229Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.229Z info: Generating layer: ui
+2026-04-03T08:48:42.229Z warn: No template found for layer: ui
+2026-04-03T08:48:42.230Z info: Generated 3 root config files
+2026-04-03T08:48:42.230Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.235Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-ufbTGp\my-project
+2026-04-03T08:48:42.263Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-Xihbic\my-project
+2026-04-03T08:48:42.248Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-3VoLoh\my-project
+2026-04-03T08:48:42.235Z info: Generating layer: types
+2026-04-03T08:48:42.215Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-yNH7m8\my-project
+2026-04-03T08:48:42.263Z info: Generating layer: types
+2026-04-03T08:48:42.248Z info: Generating layer: types
+2026-04-03T08:48:42.236Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.215Z info: Generating layer: types
+2026-04-03T08:48:42.265Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.249Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.236Z info: Generating layer: config
+2026-04-03T08:48:42.216Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.265Z info: Generating layer: config
+2026-04-03T08:48:42.249Z info: Generating layer: config
+2026-04-03T08:48:42.236Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.216Z info: Generating layer: config
+2026-04-03T08:48:42.266Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.250Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.236Z info: Generating layer: repo
+2026-04-03T08:48:42.216Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.266Z info: Generating layer: repo
+2026-04-03T08:48:42.250Z info: Generating layer: repo
+2026-04-03T08:48:42.236Z warn: No template found for layer: repo
+2026-04-03T08:48:42.216Z info: Generating layer: repo
+2026-04-03T08:48:42.267Z info: Layer repo generated with 3 files
+2026-04-03T08:48:42.250Z warn: No template found for layer: repo
+2026-04-03T08:48:42.236Z info: Generating layer: service
+2026-04-03T08:48:42.216Z warn: No template found for layer: repo
+2026-04-03T08:48:42.267Z info: Generating layer: service
+2026-04-03T08:48:42.250Z info: Generating layer: service
+2026-04-03T08:48:42.237Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.216Z info: Generating layer: service
+2026-04-03T08:48:42.268Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.251Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.237Z info: Generating layer: runtime
+2026-04-03T08:48:42.217Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.251Z info: Generating layer: runtime
+2026-04-03T08:48:42.268Z info: Generating layer: runtime
+2026-04-03T08:48:42.238Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.217Z info: Generating layer: runtime
+2026-04-03T08:48:42.252Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.269Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.238Z info: Generating layer: ui
+2026-04-03T08:48:42.219Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.252Z info: Generating layer: ui
+2026-04-03T08:48:42.269Z info: Generating layer: ui
+2026-04-03T08:48:42.238Z warn: No template found for layer: ui
+2026-04-03T08:48:42.219Z info: Generating layer: ui
+2026-04-03T08:48:42.252Z info: Layer ui generated with 2 files
+2026-04-03T08:48:42.269Z warn: No template found for layer: ui
+2026-04-03T08:48:42.239Z info: Generated 3 root config files
+2026-04-03T08:48:42.219Z warn: No template found for layer: ui
+2026-04-03T08:48:42.253Z info: Generated 3 root config files
+2026-04-03T08:48:42.270Z info: Generated 3 root config files
+2026-04-03T08:48:42.239Z info: Bootstrap completed successfully: my-awesome-app
+2026-04-03T08:48:42.221Z info: Generated 3 root config files
+2026-04-03T08:48:42.253Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.270Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.287Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-TUhieu\my-project
+2026-04-03T08:48:42.221Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.287Z info: Generating layer: types
+2026-04-03T08:48:42.305Z error: Bootstrap failed: Target path exists and is not a directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-52k9Pq\not-a-directory
+2026-04-03T08:48:42.288Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.279Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-BkyF3p\my-project
+2026-04-03T08:48:42.308Z error: Bootstrap failed: Target directory is not empty: C:\Users\czy\AppData\Local\Temp\bootstrap-test-NAGeBs\non-empty-dir
+2026-04-03T08:48:42.310Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-WriJG8\my-project
+2026-04-03T08:48:42.288Z info: Generating layer: config
+2026-04-03T08:48:42.279Z info: Generating layer: types
+2026-04-03T08:48:42.321Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-T2wHlF\my-project
+2026-04-03T08:48:42.310Z info: Generating layer: types
+2026-04-03T08:48:42.289Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.280Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.321Z info: Generating layer: types
+2026-04-03T08:48:42.311Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.289Z info: Generating layer: repo
+2026-04-03T08:48:42.280Z info: Generating layer: config
+2026-04-03T08:48:42.322Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.311Z info: Generating layer: config
+2026-04-03T08:48:42.289Z warn: No template found for layer: repo
+2026-04-03T08:48:42.280Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.322Z info: Generating layer: config
+2026-04-03T08:48:42.311Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.289Z info: Generating layer: service
+2026-04-03T08:48:42.280Z info: Generating layer: repo
+2026-04-03T08:48:42.322Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.311Z info: Generating layer: repo
+2026-04-03T08:48:42.290Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.280Z warn: No template found for layer: repo
+2026-04-03T08:48:42.322Z info: Generating layer: repo
+2026-04-03T08:48:42.311Z warn: No template found for layer: repo
+2026-04-03T08:48:42.290Z info: Generating layer: runtime
+2026-04-03T08:48:42.280Z info: Generating layer: service
+2026-04-03T08:48:42.322Z warn: No template found for layer: repo
+2026-04-03T08:48:42.311Z info: Generating layer: service
+2026-04-03T08:48:42.290Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.281Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.322Z info: Generating layer: service
+2026-04-03T08:48:42.312Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.291Z info: Generating layer: ui
+2026-04-03T08:48:42.281Z info: Generating layer: runtime
+2026-04-03T08:48:42.324Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.312Z info: Generating layer: runtime
+2026-04-03T08:48:42.291Z warn: No template found for layer: ui
+2026-04-03T08:48:42.282Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.324Z info: Generating layer: runtime
+2026-04-03T08:48:42.313Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.292Z info: Generated 3 root config files
+2026-04-03T08:48:42.282Z info: Generating layer: ui
+2026-04-03T08:48:42.324Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.313Z info: Generating layer: ui
+2026-04-03T08:48:42.292Z info: Bootstrap completed successfully: MyProject
+2026-04-03T08:48:42.282Z warn: No template found for layer: ui
+2026-04-03T08:48:42.324Z info: Generating layer: ui
+2026-04-03T08:48:42.313Z warn: No template found for layer: ui
+2026-04-03T08:48:42.330Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-w6aEIl\my-project
+2026-04-03T08:48:42.283Z info: Generated 3 root config files
+2026-04-03T08:48:42.324Z warn: No template found for layer: ui
+2026-04-03T08:48:42.315Z info: Generated 3 root config files
+2026-04-03T08:48:42.330Z info: Generating layer: types
+2026-04-03T08:48:42.283Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.325Z info: Generated 3 root config files
+2026-04-03T08:48:42.315Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.325Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.332Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.341Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-7pdU0Y\my-project
+2026-04-03T08:48:42.350Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-CEZn87\my-project
+2026-04-03T08:48:42.359Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-RJEcNR\my-project
+2026-04-03T08:48:42.332Z info: Generating layer: config
+2026-04-03T08:48:42.341Z info: Generating layer: types
+2026-04-03T08:48:42.350Z info: Generating layer: types
+2026-04-03T08:48:42.359Z info: Generating layer: types
+2026-04-03T08:48:42.332Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.342Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.351Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.360Z info: Layer types generated with 2 files
+2026-04-03T08:48:42.332Z info: Generating layer: repo
+2026-04-03T08:48:42.342Z info: Generating layer: config
+2026-04-03T08:48:42.351Z info: Generating layer: config
+2026-04-03T08:48:42.360Z info: Generating layer: config
+2026-04-03T08:48:42.334Z info: Layer repo generated with 3 files
+2026-04-03T08:48:42.342Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.352Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.360Z info: Layer config generated with 1 files
+2026-04-03T08:48:42.334Z info: Generating layer: service
+2026-04-03T08:48:42.342Z info: Generating layer: repo
+2026-04-03T08:48:42.352Z info: Generating layer: repo
+2026-04-03T08:48:42.360Z info: Generating layer: repo
+2026-04-03T08:48:42.335Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.342Z warn: No template found for layer: repo
+2026-04-03T08:48:42.352Z warn: No template found for layer: repo
+2026-04-03T08:48:42.360Z warn: No template found for layer: repo
+2026-04-03T08:48:42.335Z info: Generating layer: runtime
+2026-04-03T08:48:42.342Z info: Generating layer: service
+2026-04-03T08:48:42.352Z info: Generating layer: service
+2026-04-03T08:48:42.360Z info: Generating layer: service
+2026-04-03T08:48:42.335Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.343Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.353Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.361Z info: Layer service generated with 2 files
+2026-04-03T08:48:42.335Z info: Generating layer: ui
+2026-04-03T08:48:42.343Z info: Generating layer: runtime
+2026-04-03T08:48:42.353Z info: Generating layer: runtime
+2026-04-03T08:48:42.361Z info: Generating layer: runtime
+2026-04-03T08:48:42.335Z warn: No template found for layer: ui
+2026-04-03T08:48:42.344Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.353Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.362Z info: Layer runtime generated with 2 files
+2026-04-03T08:48:42.337Z info: Generated 3 root config files
+2026-04-03T08:48:42.344Z info: Generating layer: ui
+2026-04-03T08:48:42.353Z info: Generating layer: ui
+2026-04-03T08:48:42.362Z info: Generating layer: ui
+2026-04-03T08:48:42.337Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.345Z info: Layer ui generated with 2 files
+2026-04-03T08:48:42.353Z warn: No template found for layer: ui
+2026-04-03T08:48:42.362Z warn: No template found for layer: ui
+2026-04-03T08:48:42.346Z info: Generated 3 root config files
+2026-04-03T08:48:42.354Z info: Generated 3 root config files
+2026-04-03T08:48:42.363Z info: Generated 3 root config files
+2026-04-03T08:48:42.346Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.355Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:48:42.363Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.184Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.202Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.213Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.235Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.247Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.259Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.268Z info: Starting bootstrap for project: MyProject
+2026-04-03T08:49:54.280Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.225Z info: Starting bootstrap for project: my-awesome-app
+2026-04-03T08:49:54.283Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.295Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.285Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.306Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.316Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.328Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.338Z info: Starting bootstrap for project: test-app
+2026-04-03T08:49:54.184Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-ZCmxII\my-project
+2026-04-03T08:49:54.184Z info: Generating layer: types
+2026-04-03T08:49:54.186Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.186Z info: Generating layer: config
+2026-04-03T08:49:54.187Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.187Z info: Generating layer: repo
+2026-04-03T08:49:54.188Z info: Layer repo generated with 3 files
+2026-04-03T08:49:54.188Z info: Generating layer: service
+2026-04-03T08:49:54.191Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.191Z info: Generating layer: runtime
+2026-04-03T08:49:54.192Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.192Z info: Generating layer: ui
+2026-04-03T08:49:54.193Z info: Layer ui generated with 2 files
+2026-04-03T08:49:54.195Z info: Generated 3 root config files
+2026-04-03T08:49:54.195Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.202Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-BGY19o\my-project
+2026-04-03T08:49:54.202Z info: Generating layer: types
+2026-04-03T08:49:54.203Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.203Z info: Generating layer: config
+2026-04-03T08:49:54.204Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.204Z info: Generating layer: repo
+2026-04-03T08:49:54.205Z info: Layer repo generated with 3 files
+2026-04-03T08:49:54.205Z info: Generating layer: service
+2026-04-03T08:49:54.206Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.206Z info: Generating layer: runtime
+2026-04-03T08:49:54.206Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.206Z info: Generating layer: ui
+2026-04-03T08:49:54.207Z info: Layer ui generated with 2 files
+2026-04-03T08:49:54.208Z info: Generated 3 root config files
+2026-04-03T08:49:54.208Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.235Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-wNNqtf\my-project
+2026-04-03T08:49:54.214Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-T8OCcw\my-project
+2026-04-03T08:49:54.248Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-p6zmKq\my-project
+2026-04-03T08:49:54.235Z info: Generating layer: types
+2026-04-03T08:49:54.260Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-oudN9b\my-project
+2026-04-03T08:49:54.214Z info: Generating layer: types
+2026-04-03T08:49:54.248Z info: Generating layer: types
+2026-04-03T08:49:54.236Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.260Z info: Generating layer: types
+2026-04-03T08:49:54.214Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.249Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.236Z info: Generating layer: config
+2026-04-03T08:49:54.260Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.237Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.261Z info: Generating layer: config
+2026-04-03T08:49:54.237Z info: Generating layer: repo
+2026-04-03T08:49:54.261Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.249Z info: Generating layer: config
+2026-04-03T08:49:54.238Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.261Z info: Generating layer: repo
+2026-04-03T08:49:54.250Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.238Z info: Generating layer: service
+2026-04-03T08:49:54.262Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.250Z info: Generating layer: repo
+2026-04-03T08:49:54.239Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.262Z info: Generating layer: service
+2026-04-03T08:49:54.251Z info: Layer repo generated with 3 files
+2026-04-03T08:49:54.239Z info: Generating layer: runtime
+2026-04-03T08:49:54.263Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.240Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.251Z info: Generating layer: service
+2026-04-03T08:49:54.263Z info: Generating layer: runtime
+2026-04-03T08:49:54.240Z info: Generating layer: ui
+2026-04-03T08:49:54.215Z info: Generating layer: config
+2026-04-03T08:49:54.252Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.263Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.241Z info: Layer ui generated with 2 files
+2026-04-03T08:49:54.215Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.252Z info: Generating layer: runtime
+2026-04-03T08:49:54.263Z info: Generating layer: ui
+2026-04-03T08:49:54.242Z info: Generated 3 root config files
+2026-04-03T08:49:54.215Z info: Generating layer: repo
+2026-04-03T08:49:54.252Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.263Z warn: No template found for layer: ui
+2026-04-03T08:49:54.242Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.216Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.252Z info: Generating layer: ui
+2026-04-03T08:49:54.264Z info: Generated 3 root config files
+2026-04-03T08:49:54.269Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-xDhzkh\my-project
+2026-04-03T08:49:54.216Z info: Generating layer: service
+2026-04-03T08:49:54.253Z warn: No template found for layer: ui
+2026-04-03T08:49:54.264Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.269Z info: Generating layer: types
+2026-04-03T08:49:54.217Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.253Z info: Generated 3 root config files
+2026-04-03T08:49:54.281Z error: Bootstrap failed: Target path exists and is not a directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-9OuAjJ\not-a-directory
+2026-04-03T08:49:54.270Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.217Z info: Generating layer: runtime
+2026-04-03T08:49:54.253Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.226Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-mqeNUs\my-project
+2026-04-03T08:49:54.270Z info: Generating layer: config
+2026-04-03T08:49:54.219Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.283Z error: Bootstrap failed: Target directory is not empty: C:\Users\czy\AppData\Local\Temp\bootstrap-test-ygKgVF\non-empty-dir
+2026-04-03T08:49:54.226Z info: Generating layer: types
+2026-04-03T08:49:54.271Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.219Z info: Generating layer: ui
+2026-04-03T08:49:54.296Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-8ITXbd\my-project
+2026-04-03T08:49:54.227Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.271Z info: Generating layer: repo
+2026-04-03T08:49:54.219Z warn: No template found for layer: ui
+2026-04-03T08:49:54.296Z info: Generating layer: types
+2026-04-03T08:49:54.227Z info: Generating layer: config
+2026-04-03T08:49:54.272Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.297Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.272Z info: Generating layer: service
+2026-04-03T08:49:54.273Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.227Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.273Z info: Generating layer: runtime
+2026-04-03T08:49:54.297Z info: Generating layer: config
+2026-04-03T08:49:54.227Z info: Generating layer: repo
+2026-04-03T08:49:54.274Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.298Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.228Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.274Z info: Generating layer: ui
+2026-04-03T08:49:54.220Z info: Generated 3 root config files
+2026-04-03T08:49:54.298Z info: Generating layer: repo
+2026-04-03T08:49:54.228Z info: Generating layer: service
+2026-04-03T08:49:54.274Z warn: No template found for layer: ui
+2026-04-03T08:49:54.221Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.299Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.229Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.275Z info: Generated 3 root config files
+2026-04-03T08:49:54.285Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-mpOga1\my-project
+2026-04-03T08:49:54.299Z info: Generating layer: service
+2026-04-03T08:49:54.229Z info: Generating layer: runtime
+2026-04-03T08:49:54.275Z info: Bootstrap completed successfully: MyProject
+2026-04-03T08:49:54.286Z info: Generating layer: types
+2026-04-03T08:49:54.299Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.230Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.306Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-ANF5x2\my-project
+2026-04-03T08:49:54.286Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.299Z info: Generating layer: runtime
+2026-04-03T08:49:54.230Z info: Generating layer: ui
+2026-04-03T08:49:54.306Z info: Generating layer: types
+2026-04-03T08:49:54.287Z info: Generating layer: config
+2026-04-03T08:49:54.300Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.230Z warn: No template found for layer: ui
+2026-04-03T08:49:54.307Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.287Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.300Z info: Generating layer: ui
+2026-04-03T08:49:54.230Z info: Generated 3 root config files
+2026-04-03T08:49:54.307Z info: Generating layer: config
+2026-04-03T08:49:54.287Z info: Generating layer: repo
+2026-04-03T08:49:54.300Z warn: No template found for layer: ui
+2026-04-03T08:49:54.230Z info: Bootstrap completed successfully: my-awesome-app
+2026-04-03T08:49:54.307Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.288Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.302Z info: Generated 3 root config files
+2026-04-03T08:49:54.316Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-i7VFUL\my-project
+2026-04-03T08:49:54.307Z info: Generating layer: repo
+2026-04-03T08:49:54.288Z info: Generating layer: service
+2026-04-03T08:49:54.302Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.316Z info: Generating layer: types
+2026-04-03T08:49:54.308Z info: Layer repo generated with 3 files
+2026-04-03T08:49:54.289Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.328Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-m5qEGP\my-project
+2026-04-03T08:49:54.318Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.308Z info: Generating layer: service
+2026-04-03T08:49:54.289Z info: Generating layer: runtime
+2026-04-03T08:49:54.328Z info: Generating layer: types
+2026-04-03T08:49:54.318Z info: Generating layer: config
+2026-04-03T08:49:54.309Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.290Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.329Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.318Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.329Z info: Generating layer: config
+2026-04-03T08:49:54.309Z info: Generating layer: runtime
+2026-04-03T08:49:54.329Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.318Z info: Generating layer: repo
+2026-04-03T08:49:54.310Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.329Z info: Generating layer: repo
+2026-04-03T08:49:54.319Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.310Z info: Generating layer: ui
+2026-04-03T08:49:54.330Z info: Layer repo generated with 2 files
+2026-04-03T08:49:54.319Z info: Generating layer: service
+2026-04-03T08:49:54.310Z warn: No template found for layer: ui
+2026-04-03T08:49:54.330Z info: Generating layer: service
+2026-04-03T08:49:54.320Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.311Z info: Generated 3 root config files
+2026-04-03T08:49:54.331Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.320Z info: Generating layer: runtime
+2026-04-03T08:49:54.311Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.331Z info: Generating layer: runtime
+2026-04-03T08:49:54.321Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.338Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-T9OvoA\my-project
+2026-04-03T08:49:54.332Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.321Z info: Generating layer: ui
+2026-04-03T08:49:54.339Z info: Generating layer: types
+2026-04-03T08:49:54.332Z info: Generating layer: ui
+2026-04-03T08:49:54.322Z info: Layer ui generated with 2 files
+2026-04-03T08:49:54.340Z info: Layer types generated with 2 files
+2026-04-03T08:49:54.332Z warn: No template found for layer: ui
+2026-04-03T08:49:54.323Z info: Generated 3 root config files
+2026-04-03T08:49:54.340Z info: Generating layer: config
+2026-04-03T08:49:54.333Z info: Generated 3 root config files
+2026-04-03T08:49:54.323Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.340Z info: Layer config generated with 1 files
+2026-04-03T08:49:54.333Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.341Z info: Generating layer: repo
+2026-04-03T08:49:54.342Z info: Layer repo generated with 3 files
+2026-04-03T08:49:54.342Z info: Generating layer: service
+2026-04-03T08:49:54.343Z info: Layer service generated with 2 files
+2026-04-03T08:49:54.290Z info: Generating layer: ui
+2026-04-03T08:49:54.343Z info: Generating layer: runtime
+2026-04-03T08:49:54.290Z warn: No template found for layer: ui
+2026-04-03T08:49:54.344Z info: Layer runtime generated with 2 files
+2026-04-03T08:49:54.291Z info: Generated 3 root config files
+2026-04-03T08:49:54.344Z info: Generating layer: ui
+2026-04-03T08:49:54.291Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:49:54.344Z info: Layer ui generated with 2 files
+2026-04-03T08:49:54.345Z info: Generated 3 root config files
+2026-04-03T08:49:54.345Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.554Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.583Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.600Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.640Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.622Z info: Starting bootstrap for project: my-awesome-app
+2026-04-03T08:50:05.657Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.693Z info: Starting bootstrap for project: MyProject
+2026-04-03T08:50:05.676Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.709Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.712Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.718Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.733Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.747Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.811Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.825Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.766Z info: Starting bootstrap for project: test-app
+2026-04-03T08:50:05.555Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-Qj7sgo\my-project
+2026-04-03T08:50:05.556Z info: Generating layer: types
+2026-04-03T08:50:05.558Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.559Z info: Generating layer: config
+2026-04-03T08:50:05.563Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.564Z info: Generating layer: repo
+2026-04-03T08:50:05.567Z info: Layer repo generated with 3 files
+2026-04-03T08:50:05.567Z info: Generating layer: service
+2026-04-03T08:50:05.569Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.569Z info: Generating layer: runtime
+2026-04-03T08:50:05.571Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.572Z info: Generating layer: ui
+2026-04-03T08:50:05.573Z info: Layer ui generated with 2 files
+2026-04-03T08:50:05.575Z info: Generated 3 root config files
+2026-04-03T08:50:05.575Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.584Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-lXaJT0\my-project
+2026-04-03T08:50:05.584Z info: Generating layer: types
+2026-04-03T08:50:05.585Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.586Z info: Generating layer: config
+2026-04-03T08:50:05.586Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.587Z info: Generating layer: repo
+2026-04-03T08:50:05.588Z info: Layer repo generated with 3 files
+2026-04-03T08:50:05.588Z info: Generating layer: service
+2026-04-03T08:50:05.589Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.590Z info: Generating layer: runtime
+2026-04-03T08:50:05.591Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.591Z info: Generating layer: ui
+2026-04-03T08:50:05.592Z info: Layer ui generated with 2 files
+2026-04-03T08:50:05.593Z info: Generated 3 root config files
+2026-04-03T08:50:05.593Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.600Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-cgKBsz\my-project
+2026-04-03T08:50:05.600Z info: Generating layer: types
+2026-04-03T08:50:05.602Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.602Z info: Generating layer: config
+2026-04-03T08:50:05.603Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.603Z info: Generating layer: repo
+2026-04-03T08:50:05.604Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.605Z info: Generating layer: service
+2026-04-03T08:50:05.606Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.640Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-EwnvH8\my-project
+2026-04-03T08:50:05.606Z info: Generating layer: runtime
+2026-04-03T08:50:05.622Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-SlLdh9\my-project
+2026-04-03T08:50:05.657Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-iPX9T8\my-project
+2026-04-03T08:50:05.607Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.640Z info: Generating layer: types
+2026-04-03T08:50:05.658Z info: Generating layer: types
+2026-04-03T08:50:05.623Z info: Generating layer: types
+2026-04-03T08:50:05.607Z info: Generating layer: ui
+2026-04-03T08:50:05.642Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.625Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.660Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.607Z warn: No template found for layer: ui
+2026-04-03T08:50:05.642Z info: Generating layer: config
+2026-04-03T08:50:05.625Z info: Generating layer: config
+2026-04-03T08:50:05.660Z info: Generating layer: config
+2026-04-03T08:50:05.615Z info: Generated 3 root config files
+2026-04-03T08:50:05.643Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.615Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.643Z info: Generating layer: repo
+2026-04-03T08:50:05.626Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.694Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-1inu5s\my-project
+2026-04-03T08:50:05.644Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.627Z info: Generating layer: repo
+2026-04-03T08:50:05.694Z info: Generating layer: types
+2026-04-03T08:50:05.644Z info: Generating layer: service
+2026-04-03T08:50:05.628Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.695Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.645Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.628Z info: Generating layer: service
+2026-04-03T08:50:05.696Z info: Generating layer: config
+2026-04-03T08:50:05.661Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.645Z info: Generating layer: runtime
+2026-04-03T08:50:05.630Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.661Z info: Generating layer: repo
+2026-04-03T08:50:05.697Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.647Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.630Z info: Generating layer: runtime
+2026-04-03T08:50:05.664Z info: Layer repo generated with 3 files
+2026-04-03T08:50:05.697Z info: Generating layer: repo
+2026-04-03T08:50:05.647Z info: Generating layer: ui
+2026-04-03T08:50:05.631Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.664Z info: Generating layer: service
+2026-04-03T08:50:05.699Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.649Z info: Layer ui generated with 2 files
+2026-04-03T08:50:05.631Z info: Generating layer: ui
+2026-04-03T08:50:05.668Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.699Z info: Generating layer: service
+2026-04-03T08:50:05.650Z info: Generated 3 root config files
+2026-04-03T08:50:05.632Z warn: No template found for layer: ui
+2026-04-03T08:50:05.668Z info: Generating layer: runtime
+2026-04-03T08:50:05.700Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.650Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.633Z info: Generated 3 root config files
+2026-04-03T08:50:05.669Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.700Z info: Generating layer: runtime
+2026-04-03T08:50:05.633Z info: Bootstrap completed successfully: my-awesome-app
+2026-04-03T08:50:05.677Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-orjpkX\my-project
+2026-04-03T08:50:05.669Z info: Generating layer: ui
+2026-04-03T08:50:05.702Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.709Z error: Bootstrap failed: Target path exists and is not a directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-hLQDH4\not-a-directory
+2026-04-03T08:50:05.677Z info: Generating layer: types
+2026-04-03T08:50:05.670Z warn: No template found for layer: ui
+2026-04-03T08:50:05.702Z info: Generating layer: ui
+2026-04-03T08:50:05.715Z error: Bootstrap failed: Target directory is not empty: C:\Users\czy\AppData\Local\Temp\bootstrap-test-7dyk32\non-empty-dir
+2026-04-03T08:50:05.679Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.671Z info: Generated 3 root config files
+2026-04-03T08:50:05.702Z warn: No template found for layer: ui
+2026-04-03T08:50:05.718Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-yN1MEY\my-project
+2026-04-03T08:50:05.680Z info: Generating layer: config
+2026-04-03T08:50:05.671Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.703Z info: Generated 3 root config files
+2026-04-03T08:50:05.719Z info: Generating layer: types
+2026-04-03T08:50:05.681Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.734Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-wBlZSC\my-project
+2026-04-03T08:50:05.720Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.703Z info: Bootstrap completed successfully: MyProject
+2026-04-03T08:50:05.681Z info: Generating layer: repo
+2026-04-03T08:50:05.734Z info: Generating layer: types
+2026-04-03T08:50:05.748Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-yi8g7Y\my-project
+2026-04-03T08:50:05.682Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.735Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.748Z info: Generating layer: types
+2026-04-03T08:50:05.682Z info: Generating layer: service
+2026-04-03T08:50:05.735Z info: Generating layer: config
+2026-04-03T08:50:05.749Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.683Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.749Z info: Generating layer: config
+2026-04-03T08:50:05.720Z info: Generating layer: config
+2026-04-03T08:50:05.684Z info: Generating layer: runtime
+2026-04-03T08:50:05.750Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.736Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.721Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.685Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.750Z info: Generating layer: repo
+2026-04-03T08:50:05.736Z info: Generating layer: repo
+2026-04-03T08:50:05.721Z info: Generating layer: repo
+2026-04-03T08:50:05.685Z info: Generating layer: ui
+2026-04-03T08:50:05.752Z info: Layer repo generated with 3 files
+2026-04-03T08:50:05.737Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.722Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.685Z warn: No template found for layer: ui
+2026-04-03T08:50:05.752Z info: Generating layer: service
+2026-04-03T08:50:05.737Z info: Generating layer: service
+2026-04-03T08:50:05.722Z info: Generating layer: service
+2026-04-03T08:50:05.687Z info: Generated 3 root config files
+2026-04-03T08:50:05.753Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.738Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.724Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.688Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.753Z info: Generating layer: runtime
+2026-04-03T08:50:05.739Z info: Generating layer: runtime
+2026-04-03T08:50:05.724Z info: Generating layer: runtime
+2026-04-03T08:50:05.812Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-z6FdgU\my-project
+2026-04-03T08:50:05.755Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.740Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.725Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.812Z info: Generating layer: types
+2026-04-03T08:50:05.756Z info: Generating layer: ui
+2026-04-03T08:50:05.740Z info: Generating layer: ui
+2026-04-03T08:50:05.726Z info: Generating layer: ui
+2026-04-03T08:50:05.813Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.757Z warn: No template found for layer: ui
+2026-04-03T08:50:05.740Z warn: No template found for layer: ui
+2026-04-03T08:50:05.726Z warn: No template found for layer: ui
+2026-04-03T08:50:05.813Z info: Generating layer: config
+2026-04-03T08:50:05.761Z info: Generated 3 root config files
+2026-04-03T08:50:05.742Z info: Generated 3 root config files
+2026-04-03T08:50:05.728Z info: Generated 3 root config files
+2026-04-03T08:50:05.814Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.761Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.742Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.728Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.814Z info: Generating layer: repo
+2026-04-03T08:50:05.796Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-5MmhtJ\my-project
+2026-04-03T08:50:05.825Z info: Created target directory: C:\Users\czy\AppData\Local\Temp\bootstrap-test-06zRBu\my-project
+2026-04-03T08:50:05.815Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.796Z info: Generating layer: types
+2026-04-03T08:50:05.816Z info: Generating layer: service
+2026-04-03T08:50:05.799Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.817Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.799Z info: Generating layer: config
+2026-04-03T08:50:05.817Z info: Generating layer: runtime
+2026-04-03T08:50:05.818Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.800Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.818Z info: Generating layer: ui
+2026-04-03T08:50:05.800Z info: Generating layer: repo
+2026-04-03T08:50:05.818Z warn: No template found for layer: ui
+2026-04-03T08:50:05.801Z info: Layer repo generated with 2 files
+2026-04-03T08:50:05.801Z info: Generating layer: service
+2026-04-03T08:50:05.820Z info: Generated 3 root config files
+2026-04-03T08:50:05.802Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.820Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.802Z info: Generating layer: runtime
+2026-04-03T08:50:05.826Z info: Generating layer: types
+2026-04-03T08:50:05.803Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.804Z info: Generating layer: ui
+2026-04-03T08:50:05.828Z info: Layer types generated with 2 files
+2026-04-03T08:50:05.805Z info: Layer ui generated with 2 files
+2026-04-03T08:50:05.828Z info: Generating layer: config
+2026-04-03T08:50:05.806Z info: Generated 3 root config files
+2026-04-03T08:50:05.829Z info: Layer config generated with 1 files
+2026-04-03T08:50:05.806Z info: Bootstrap completed successfully: test-app
+2026-04-03T08:50:05.829Z info: Generating layer: repo
+2026-04-03T08:50:05.830Z info: Layer repo generated with 3 files
+2026-04-03T08:50:05.830Z info: Generating layer: service
+2026-04-03T08:50:05.832Z info: Layer service generated with 2 files
+2026-04-03T08:50:05.832Z info: Generating layer: runtime
+2026-04-03T08:50:05.833Z info: Layer runtime generated with 2 files
+2026-04-03T08:50:05.833Z info: Generating layer: ui
+2026-04-03T08:50:05.834Z info: Layer ui generated with 2 files
+2026-04-03T08:50:05.835Z info: Generated 3 root config files
+2026-04-03T08:50:05.836Z info: Bootstrap completed successfully: test-app
