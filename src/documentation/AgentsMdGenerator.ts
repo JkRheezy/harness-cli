@@ -14,9 +14,13 @@ export class AgentsMdGenerator {
   }
 
   async loadTemplate(): Promise<void> {
-    const templatePath = path.join(__dirname, 'templates', 'agents-md.hbs');
-    const templateContent = await fs.readFile(templatePath, 'utf-8');
-    this.template = Handlebars.compile(templateContent);
+    try {
+      const templatePath = path.join(__dirname, 'templates', 'agents-md.hbs');
+      const templateContent = await fs.readFile(templatePath, 'utf-8');
+      this.template = Handlebars.compile(templateContent);
+    } catch (error) {
+      throw new Error(`Failed to load AGENTS.md template: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async generate(input: DocumentationInput): Promise<DocumentationResult> {
