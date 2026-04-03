@@ -3,6 +3,15 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
 
+export interface UnattendedConfig {
+  enabled: boolean;           // 是否启用无人值守模式
+  maxConsecutiveErrors: number;  // 最大连续错误数（超过则暂停）
+  pauseOnHighErrorRate: boolean; // 错误率过高时是否暂停
+  errorRateThreshold: number;    // 错误率阈值（如 0.5 = 50%）
+  autoResume: boolean;          // 是否自动恢复
+  resumeDelay: number;          // 恢复延迟（毫秒）
+}
+
 export interface HarnessConfig {
   llm: {
     provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -34,6 +43,7 @@ export interface HarnessConfig {
   projectPath?: string;
   evolution?: EvolutionConfig;
   businessContext?: BusinessContext;
+  unattended?: UnattendedConfig;
 }
 
 export class ConfigLoader {
@@ -131,6 +141,13 @@ export class ConfigLoader {
       merged.superpowers = {
         ...defaults.superpowers,
         ...overrides.superpowers
+      };
+    }
+    
+    // Merge unattended config if provided
+    if (overrides.unattended) {
+      merged.unattended = {
+        ...overrides.unattended
       };
     }
     

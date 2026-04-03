@@ -24,11 +24,26 @@ program
   .option('-c, --config <path>', '配置文件路径', '.harness/config.yaml')
   .option('-d, --duration <hours>', '最大运行时长(小时)', '6')
   .option('--dry-run', '模拟运行，不实际执行')
+  .option('--unattended', '启用无人值守模式', false)
+  .option('--max-errors <number>', '最大连续错误数', '5')
   .action(async (options) => {
     try {
       logger.info('🚀 启动 Harness 无人值守 Loop...');
       
       const config = await ConfigLoader.load(options.config);
+      
+      // 应用无人值守配置
+      if (options.unattended) {
+        config.unattended = {
+          enabled: true,
+          maxConsecutiveErrors: parseInt(options.maxErrors),
+          pauseOnHighErrorRate: true,
+          errorRateThreshold: 0.5,
+          autoResume: true,
+          resumeDelay: 300000
+        };
+      }
+      
       const controller = new LoopController(config);
       
       // 设置运行时长限制
