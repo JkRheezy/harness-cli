@@ -1,0 +1,65 @@
+# {{projectName}} 架构设计
+
+> 六层架构总览与质量评分
+
+## 1. 架构概述
+
+{{overview}}
+
+## 2. 质量评分
+
+**总体评分: {{qualityScore.overall}}/100**
+
+### 各层评分
+
+| 层级 | 评分 | 复杂度 | 主要问题 |
+|------|------|--------|----------|
+{{#each qualityScore.byLayer}}
+| {{@key}} | {{this}}/100 | {{lookup ../layerComplexity @key}} | {{lookup ../layerIssues @key}} |
+{{/each}}
+
+### 待改进项
+
+{{#each qualityScore.gaps}}
+- **{{layer}}**: {{issue}} ({{severity}})
+{{/each}}
+
+## 3. 六层架构详解
+
+{{#each layers}}
+### 3.{{@index}} {{name}} 层
+
+**目录**: `{{directory}}`
+
+**描述**: {{description}}
+
+**依赖**: {{#if dependencies}}{{#each dependencies}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}无{{/if}}
+
+**质量指标**:
+- 测试覆盖率: {{quality.coverage}}%
+- 复杂度: {{quality.complexity}}
+- 问题数: {{quality.issues.length}}
+
+{{#if quality.issues}}
+**已知问题**:
+{{#each quality.issues}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+
+## 4. 横切关注点
+
+{{#each crossCutting}}
+### {{name}}
+
+{{description}}
+
+**实现**: {{implementation}}
+
+{{/each}}
+
+## 5. 关键架构决策
+
+> 待补充 - 记录重要架构决策 (ADRs)

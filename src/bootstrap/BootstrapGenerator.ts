@@ -30,6 +30,10 @@ export class BootstrapGenerator {
   async bootstrap(input: BootstrapInput): Promise<BootstrapResult> {
     this.logger.info(`Starting bootstrap for project: ${input.projectName}`);
 
+    // Track created resources for potential rollback
+    const createdFiles: string[] = [];
+    const createdDirs: string[] = [];
+
     try {
       // Validate and create target directory
       await this.ensureTargetDirectory(input.targetDir);
@@ -41,13 +45,13 @@ export class BootstrapGenerator {
       const layerOrder: LayerName[] = ['types', 'config', 'repo', 'service', 'runtime', 'ui'];
 
       for (const layerName of layerOrder) {
-        const layerResult = await this.generateLayer(layerName, input);
+        const layerResult = await this.generateLayer(layerName, input, createdFiles, createdDirs);
         layers.push(layerResult);
         filesCreated.push(...layerResult.files);
       }
 
       // Generate root config files
-      const configFiles = await this.generateRootConfigFiles(input);
+      const configFiles = await this.generateRootConfigFiles(input, createdFiles);
       filesCreated.push(...configFiles);
 
       this.logger.info(`Bootstrap completed successfully: ${input.projectName}`);
@@ -62,6 +66,9 @@ export class BootstrapGenerator {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Bootstrap failed: ${errorMessage}`);
 
+      // Rollback: clean up created files and directories
+      await this.rollback(createdFiles, createdDirs);
+
       return {
         success: false,
         projectPath: input.targetDir,
@@ -73,27 +80,61 @@ export class BootstrapGenerator {
   }
 
   /**
+   * Rollback created files and directories on failure
+   */
+  private async rollback(files: string[], dirs: string[]): Promise<void> {
+    this.logger.warn('Rolling back created resources...');
+
+    // Delete files in reverse order (newest first)
+    for (const file of [...files].reverse()) {
+      try {
+        await fs.promises.unlink(file);
+        this.logger.debug(`Rolled back file: ${file}`);
+      } catch (err) {
+        // File might not exist, ignore error
+      }
+    }
+
+    // Delete directories in reverse order
+    for (const dir of [...dirs].reverse()) {
+      try {
+        const contents = await fs.promises.readdir(dir).catch(() => []);
+        if (contents.length === 0) {
+          await fs.promises.rmdir(dir);
+          this.logger.debug(`Rolled back directory: ${dir}`);
+        }
+      } catch (err) {
+        // Directory might not be empty or not exist, ignore error
+      }
+    }
+
+    this.logger.warn('Rollback completed');
+  }
+
+  /**
    * Ensure target directory exists (create if not exists)
    */
   private async ensureTargetDirectory(targetDir: string): Promise<void> {
     const absolutePath = path.resolve(targetDir);
 
-    // Check if directory exists
-    if (fs.existsSync(absolutePath)) {
+    // Check if directory exists using async API
+    const exists = await fs.promises.access(absolutePath).then(() => true).catch(() => false);
+
+    if (exists) {
       // Check if it's a file
-      const stats = fs.statSync(absolutePath);
+      const stats = await fs.promises.stat(absolutePath);
       if (!stats.isDirectory()) {
         throw new Error(`Target path exists and is not a directory: ${targetDir}`);
       }
 
       // Check if directory is empty
-      const contents = fs.readdirSync(absolutePath);
+      const contents = await fs.promises.readdir(absolutePath);
       if (contents.length > 0) {
         throw new Error(`Target directory is not empty: ${targetDir}`);
       }
     } else {
-      // Create directory
-      fs.mkdirSync(absolutePath, { recursive: true });
+      // Create directory using async API
+      await fs.promises.mkdir(absolutePath, { recursive: true });
       this.logger.info(`Created target directory: ${absolutePath}`);
     }
   }
@@ -101,53 +142,80 @@ export class BootstrapGenerator {
   /**
    * Generate a single layer
    */
-  private async generateLayer(layerName: LayerName, input: BootstrapInput): Promise<LayerResult> {
+  private async generateLayer(
+    layerName: LayerName,
+    input: BootstrapInput,
+    createdFiles: string[] = [],
+    createdDirs: string[] = []
+  ): Promise<LayerResult> {
     this.logger.info(`Generating layer: ${layerName}`);
 
-    const template = this.templateRegistry.getTemplate(layerName, input.techStack);
+    try {
+      const template = this.templateRegistry.getTemplate(layerName, input.techStack);
 
-    if (!template) {
-      this.logger.warn(`No template found for layer: ${layerName}`);
+      if (!template) {
+        this.logger.warn(`No template found for layer: ${layerName}`);
+        return {
+          layer: layerName,
+          created: false,
+          files: []
+        };
+      }
+
+      const layerDir = path.join(input.targetDir, template.directory);
+      const files: string[] = [];
+
+      // Create layer directory using async API
+      await fs.promises.mkdir(layerDir, { recursive: true });
+      // Track directory for potential rollback
+      if (!createdDirs.includes(layerDir)) {
+        createdDirs.push(layerDir);
+      }
+
+      // Generate files from template
+      for (const fileTemplate of template.files) {
+        const filePath = path.join(layerDir, fileTemplate.path);
+        const fileDir = path.dirname(filePath);
+
+        // Ensure subdirectory exists using async API
+        await fs.promises.mkdir(fileDir, { recursive: true });
+        if (!createdDirs.includes(fileDir) && fileDir !== layerDir) {
+          createdDirs.push(fileDir);
+        }
+
+        // Replace variables in template
+        const content = this.replaceVariables(fileTemplate.template, input);
+
+        // Write file using async API
+        await fs.promises.writeFile(filePath, content, 'utf-8');
+        // Track file for potential rollback
+        createdFiles.push(filePath);
+
+        // Normalize path to use forward slashes for consistency
+        const relativePath = path.relative(input.targetDir, filePath).replace(/\\/g, '/');
+        files.push(relativePath);
+
+        this.logger.debug(`Created file: ${filePath}`);
+      }
+
+      this.logger.info(`Layer ${layerName} generated with ${files.length} files`);
+
+      return {
+        layer: layerName,
+        created: true,
+        files
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to generate layer ${layerName}: ${errorMessage}`);
+
       return {
         layer: layerName,
         created: false,
-        files: []
+        files: [],
+        error: errorMessage
       };
     }
-
-    const layerDir = path.join(input.targetDir, template.directory);
-    const files: string[] = [];
-
-    // Create layer directory
-    fs.mkdirSync(layerDir, { recursive: true });
-
-    // Generate files from template
-    for (const fileTemplate of template.files) {
-      const filePath = path.join(layerDir, fileTemplate.path);
-      const fileDir = path.dirname(filePath);
-
-      // Ensure subdirectory exists
-      fs.mkdirSync(fileDir, { recursive: true });
-
-      // Replace variables in template
-      const content = this.replaceVariables(fileTemplate.template, input);
-
-      // Write file
-      fs.writeFileSync(filePath, content, 'utf-8');
-      // Normalize path to use forward slashes for consistency
-      const relativePath = path.relative(input.targetDir, filePath).replace(/\\/g, '/');
-      files.push(relativePath);
-
-      this.logger.debug(`Created file: ${filePath}`);
-    }
-
-    this.logger.info(`Layer ${layerName} generated with ${files.length} files`);
-
-    return {
-      layer: layerName,
-      created: true,
-      files
-    };
   }
 
   /**
@@ -164,30 +232,39 @@ export class BootstrapGenerator {
   /**
    * Generate root configuration files (package.json, tsconfig.json, .gitignore)
    */
-  private async generateRootConfigFiles(input: BootstrapInput): Promise<string[]> {
+  private async generateRootConfigFiles(input: BootstrapInput, createdFiles: string[] = []): Promise<string[]> {
     const files: string[] = [];
 
-    // Generate package.json
-    const packageJsonPath = path.join(input.targetDir, 'package.json');
-    const packageJson = this.generatePackageJson(input);
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
-    files.push('package.json');
+    try {
+      // Generate package.json
+      const packageJsonPath = path.join(input.targetDir, 'package.json');
+      const packageJson = this.generatePackageJson(input);
+      await fs.promises.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
+      createdFiles.push(packageJsonPath);
+      files.push('package.json');
 
-    // Generate tsconfig.json
-    const tsconfigPath = path.join(input.targetDir, 'tsconfig.json');
-    const tsconfig = this.generateTsConfig(input);
-    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2), 'utf-8');
-    files.push('tsconfig.json');
+      // Generate tsconfig.json
+      const tsconfigPath = path.join(input.targetDir, 'tsconfig.json');
+      const tsconfig = this.generateTsConfig(input);
+      await fs.promises.writeFile(tsconfigPath, JSON.stringify(tsconfig, null, 2), 'utf-8');
+      createdFiles.push(tsconfigPath);
+      files.push('tsconfig.json');
 
-    // Generate .gitignore
-    const gitignorePath = path.join(input.targetDir, '.gitignore');
-    const gitignore = this.generateGitignore(input);
-    fs.writeFileSync(gitignorePath, gitignore, 'utf-8');
-    files.push('.gitignore');
+      // Generate .gitignore
+      const gitignorePath = path.join(input.targetDir, '.gitignore');
+      const gitignore = this.generateGitignore(input);
+      await fs.promises.writeFile(gitignorePath, gitignore, 'utf-8');
+      createdFiles.push(gitignorePath);
+      files.push('.gitignore');
 
-    this.logger.info(`Generated ${files.length} root config files`);
+      this.logger.info(`Generated ${files.length} root config files`);
 
-    return files;
+      return files;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to generate root config files: ${errorMessage}`);
+      throw error;
+    }
   }
 
   /**

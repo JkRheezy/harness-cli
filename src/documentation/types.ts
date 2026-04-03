@@ -80,6 +80,8 @@ export interface ArchitectureDocContent {
   layers: LayerInfo[];
   qualityScore: QualityScore;
   crossCutting: CrossCuttingConcern[];
+  layerComplexity?: Record<string, string>;
+  layerIssues?: Record<string, string>;
 }
 
 export interface LayerInfo {

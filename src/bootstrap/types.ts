@@ -37,6 +37,7 @@ export interface LayerResult {
   layer: LayerName;
   created: boolean;
   files: string[];
+  error?: string;
 }
 
 export type LayerName = 
