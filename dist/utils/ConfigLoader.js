@@ -99,6 +99,12 @@ class ConfigLoader {
                 ...overrides.superpowers
             };
         }
+        // Merge unattended config if provided
+        if (overrides.unattended) {
+            merged.unattended = {
+                ...overrides.unattended
+            };
+        }
         // 替换环境变量占位符 ${ENV_VAR}
         this.resolveEnvVariables(merged);
         return merged;

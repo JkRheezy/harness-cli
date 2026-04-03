@@ -69,6 +69,13 @@ class LoopController extends events_1.EventEmitter {
         };
         this.actionHistory = [];
         this.hasGeneratedInitialTasks = false;
+        // Health monitoring for unattended mode
+        this.healthStats = {
+            consecutiveErrors: 0,
+            recentTasks: [],
+            lastSuccessTime: Date.now(),
+            isPaused: false
+        };
         this.config = config;
         this.logger = new Logger_1.Logger();
         // 确定工作目录
@@ -112,6 +119,91 @@ class LoopController extends events_1.EventEmitter {
         if (this.useLangGraph) {
             this.initializeLangGraph();
         }
+        // 进程异常处理 - 无人值守模式
+        this.setupProcessHandlers();
+    }
+    setupProcessHandlers() {
+        // 未捕获的异常
+        process.on('uncaughtException', (error) => {
+            this.logger.error('💥 Uncaught Exception:', error);
+            this.gracefulShutdown();
+        });
+        // 未处理的 Promise 拒绝
+        process.on('unhandledRejection', (reason, promise) => {
+            this.logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+        });
+        // SIGTERM 信号处理
+        process.on('SIGTERM', () => {
+            this.logger.info('📥 Received SIGTERM, shutting down gracefully...');
+            this.gracefulShutdown();
+        });
+        // SIGINT 信号处理 (Ctrl+C)
+        process.on('SIGINT', () => {
+            this.logger.info('📥 Received SIGINT, shutting down gracefully...');
+            this.gracefulShutdown();
+        });
+    }
+    async gracefulShutdown() {
+        this.isRunning = false;
+        // 保存检查点
+        if (this.config.checkpoint?.enabled) {
+            await this.saveCheckpoint();
+        }
+        // 停止开发服务器
+        await this.executor.stopDevServer?.();
+        this.logger.info('👋 Graceful shutdown complete');
+        process.exit(0);
+    }
+    // Health monitoring methods for unattended mode
+    async checkHealth() {
+        const config = this.config.unattended;
+        if (!config?.enabled)
+            return true;
+        // 检查连续错误数
+        if (this.healthStats.consecutiveErrors >= (config.maxConsecutiveErrors || 5)) {
+            this.logger.warn(`⚠️ 连续错误数过高 (${this.healthStats.consecutiveErrors})，暂停运行`);
+            this.healthStats.isPaused = true;
+            return false;
+        }
+        // 计算错误率
+        const recentWindow = 10; // 最近10个任务
+        const recentTasks = this.healthStats.recentTasks.slice(-recentWindow);
+        const failedCount = recentTasks.filter(t => t.status === 'failed').length;
+        const errorRate = recentTasks.length > 0 ? failedCount / recentWindow : 0;
+        if (config.pauseOnHighErrorRate && errorRate > (config.errorRateThreshold || 0.5)) {
+            this.logger.warn(`⚠️ 错误率过高 (${(errorRate * 100).toFixed(1)}%)，暂停运行`);
+            this.healthStats.isPaused = true;
+            return false;
+        }
+        return true;
+    }
+    recordTaskStatus(status) {
+        this.healthStats.recentTasks.push({
+            status,
+            timestamp: Date.now()
+        });
+        // 只保留最近100条记录
+        if (this.healthStats.recentTasks.length > 100) {
+            this.healthStats.recentTasks.shift();
+        }
+        if (status === 'success') {
+            this.healthStats.consecutiveErrors = 0;
+            this.healthStats.lastSuccessTime = Date.now();
+        }
+        else if (status === 'failed') {
+            this.healthStats.consecutiveErrors++;
+        }
+    }
+    async waitForResume() {
+        const config = this.config.unattended;
+        if (!config?.autoResume)
+            return;
+        const delay = config.resumeDelay || 300000; // 默认5分钟
+        this.logger.info(`⏸️ 将在 ${delay / 60000} 分钟后尝试恢复...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        this.healthStats.isPaused = false;
+        this.healthStats.consecutiveErrors = 0;
+        this.logger.info('▶️ 恢复运行');
     }
     initializeLangGraph() {
         const orchestrationConfig = this.config.orchestration || {
@@ -150,6 +242,11 @@ class LoopController extends events_1.EventEmitter {
         this.logger.info('🚀 Loop 控制器已启动');
         this.logger.info(`⏱️  最大运行时长: ${options.maxDuration / (1000 * 60 * 60)}小时`);
         this.logger.info(`🧪 模拟模式: ${options.dryRun ? '是' : '否'}`);
+        if (this.config.unattended?.enabled) {
+            this.logger.info('🤖 无人值守模式: 已启用');
+            this.logger.info(`   最大连续错误数: ${this.config.unattended.maxConsecutiveErrors || 5}`);
+            this.logger.info(`   自动恢复: ${this.config.unattended.autoResume ? '是' : '否'}`);
+        }
         // 加载之前的检查点（如果有）
         await this.loadCheckpoint();
         // 启动检查点定时器
@@ -163,6 +260,17 @@ class LoopController extends events_1.EventEmitter {
                 if (this.shouldStop(options.maxDuration)) {
                     this.logger.info('⏰ 达到最大运行时长，停止 Loop');
                     break;
+                }
+                // 健康检查（无人值守模式）
+                const isHealthy = await this.checkHealth();
+                if (!isHealthy) {
+                    await this.waitForResume();
+                    continue;
+                }
+                // 如果处于暂停状态，等待恢复
+                if (this.healthStats.isPaused) {
+                    await this.sleep(5000);
+                    continue;
                 }
                 // 安全检查
                 const safetyCheck = await this.safetyGuard.checkLoopHealth(this.getContext());
@@ -198,6 +306,8 @@ class LoopController extends events_1.EventEmitter {
                 const result = await this.executeTask(this.currentTask, options);
                 // 处理结果
                 await this.processResult(this.currentTask, result);
+                // 记录任务状态（无人值守模式）
+                this.recordTaskStatus(result.status);
                 // Periodic auto-evolution check
                 if (this.stats.completed > 0 && this.stats.completed % 5 === 0) {
                     await this.autoEvolution.trigger('periodic_check', this.config.projectPath || process.cwd(), this.businessContext);
@@ -206,6 +316,8 @@ class LoopController extends events_1.EventEmitter {
             catch (error) {
                 this.logger.error('Loop 执行错误:', error);
                 this.recordAction(`error:${error.message}`);
+                // 记录失败状态（无人值守模式）
+                this.recordTaskStatus('failed');
                 await this.handleLoopError(error);
             }
         }
@@ -499,6 +611,7 @@ class LoopController extends events_1.EventEmitter {
     }
     async executeTask(task, options) {
         const startTime = Date.now();
+        const maxTaskDuration = task.maxDuration || 600000; // 默认10分钟
         // Design Phase (if Superpowers enabled)
         if (this.enableSuperpowers) {
             const designResult = await this.designPhase.run(task);
@@ -511,18 +624,27 @@ class LoopController extends events_1.EventEmitter {
                 };
             }
         }
+        // 创建超时 Promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error(`Task timeout after ${maxTaskDuration}ms`));
+            }, maxTaskDuration);
+        });
         try {
             // 更新任务状态
             task.status = 'running';
             task.startedAt = new Date();
             await this.taskQueue.update(task);
-            // 执行任务（使用 TaskExecutor）
-            const result = await this.executor.execute(task, {
-                dryRun: options.dryRun,
-                onProgress: (progress) => {
-                    this.emit('taskProgress', { task, progress });
-                }
-            });
+            // 执行任务与超时竞争
+            const result = await Promise.race([
+                this.executor.execute(task, {
+                    dryRun: options.dryRun,
+                    onProgress: (progress) => {
+                        this.emit('taskProgress', { task, progress });
+                    }
+                }),
+                timeoutPromise
+            ]);
             // 计算执行时间
             const duration = Date.now() - startTime;
             return {
@@ -532,6 +654,14 @@ class LoopController extends events_1.EventEmitter {
             };
         }
         catch (error) {
+            if (error.message?.includes('timeout')) {
+                this.logger.error(`⏱️ 任务超时: ${task.title}`);
+                return {
+                    status: 'failed',
+                    error: `Task timeout after ${maxTaskDuration}ms`,
+                    duration: Date.now() - startTime
+                };
+            }
             return {
                 status: 'failed',
                 error: error.message || String(error),
@@ -571,27 +701,145 @@ class LoopController extends events_1.EventEmitter {
             this.emit('taskCompleted', { task, result });
         }
         else if (result.status === 'failed') {
-            // Use resilient error handler instead of immediate failure
-            const errorResult = await this.errorHandler.handleFailure(task, new Error(result.error), task.retryCount || 0);
-            if (errorResult.shouldRetry) {
-                // Retry the task
-                task.retryCount = (task.retryCount || 0) + 1;
+            // 分类处理错误
+            const errorType = this.classifyError(result.error);
+            switch (errorType) {
+                case 'transient':
+                    // 临时错误：网络超时等，直接重试
+                    await this.handleTransientError(task, result);
+                    break;
+                case 'file_not_found':
+                    // 文件不存在：创建缺失文件后重试
+                    await this.handleFileNotFoundError(task, result);
+                    break;
+                case 'dependency_missing':
+                    // 依赖缺失：安装依赖后重试
+                    await this.handleDependencyError(task, result);
+                    break;
+                case 'permanent':
+                default:
+                    // 永久错误：使用错误处理器创建修复任务
+                    await this.handlePermanentError(task, result);
+                    break;
+            }
+        }
+    }
+    classifyError(error) {
+        if (!error)
+            return 'unknown';
+        const errorLower = error.toLowerCase();
+        // 临时错误
+        if (errorLower.includes('timeout') ||
+            errorLower.includes('econnreset') ||
+            errorLower.includes('aborted') ||
+            errorLower.includes('network')) {
+            return 'transient';
+        }
+        // 文件不存在
+        if (errorLower.includes('enoent') ||
+            errorLower.includes('no such file')) {
+            return 'file_not_found';
+        }
+        // 依赖缺失
+        if (errorLower.includes('cannot find module') ||
+            errorLower.includes('module not found')) {
+            return 'dependency_missing';
+        }
+        return 'permanent';
+    }
+    async handleTransientError(task, result) {
+        this.logger.info(`🔄 临时错误，准备重试: ${result.error}`);
+        // 延迟 5 秒后重试同一任务
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        task.retryCount = (task.retryCount || 0) + 1;
+        task.status = 'pending';
+        await this.taskQueue.enqueue(task);
+        this.logger.info(`🔄 Task ${task.id} queued for retry (attempt ${task.retryCount})`);
+    }
+    async handleFileNotFoundError(task, result) {
+        this.logger.info(`📁 文件不存在错误，创建缺失文件后重试`);
+        // 提取文件路径并创建空文件
+        const fileMatch = result.error.match(/open '(.+?)'/);
+        if (fileMatch) {
+            const filePath = fileMatch[1];
+            await this.createEmptyFile(filePath);
+            // 重试任务
+            task.status = 'pending';
+            await this.taskQueue.enqueue(task);
+            this.logger.info(`🔄 Task ${task.id} queued for retry after creating missing file`);
+        }
+        else {
+            // 无法提取路径，按永久错误处理
+            await this.handlePermanentError(task, result);
+        }
+    }
+    async handleDependencyError(task, result) {
+        this.logger.info(`📦 依赖缺失错误，尝试安装依赖后重试`);
+        // 提取模块名称
+        const moduleMatch = result.error.match(/['"](.+?)['"]/);
+        if (moduleMatch) {
+            const moduleName = moduleMatch[1];
+            try {
+                const { execSync } = await Promise.resolve().then(() => __importStar(require('child_process')));
+                execSync(`npm install ${moduleName}`, { cwd: process.cwd(), stdio: 'pipe' });
+                this.logger.info(`✅ 安装依赖成功: ${moduleName}`);
+                // 重试任务
                 task.status = 'pending';
                 await this.taskQueue.enqueue(task);
-                this.logger.info(`🔄 Task ${task.id} queued for retry (attempt ${task.retryCount})`);
+                this.logger.info(`🔄 Task ${task.id} queued for retry after installing dependency`);
             }
-            else if (errorResult.fixTaskId) {
-                // Fix task created, mark current as failed
-                // Update both stats
-                this.stats.failed++;
-                this.sessionStats.failed++;
-                this.recordAction(`task_failed:${task.id}`);
-                task.status = 'failed';
-                task.result = result;
-                task.fixTaskId = errorResult.fixTaskId;
-                await this.taskQueue.update(task);
-                this.logger.info(`📥 Fix task ${errorResult.fixTaskId} created for failed task`);
+            catch (installError) {
+                this.logger.error(`❌ 安装依赖失败: ${installError.message}`);
+                // 安装失败，按永久错误处理
+                await this.handlePermanentError(task, result);
             }
+        }
+        else {
+            // 无法提取模块名，按永久错误处理
+            await this.handlePermanentError(task, result);
+        }
+    }
+    async handlePermanentError(task, result) {
+        // Use resilient error handler instead of immediate failure
+        const errorResult = await this.errorHandler.handleFailure(task, new Error(result.error), task.retryCount || 0);
+        if (errorResult.shouldRetry) {
+            // Retry the task
+            task.retryCount = (task.retryCount || 0) + 1;
+            task.status = 'pending';
+            await this.taskQueue.enqueue(task);
+            this.logger.info(`🔄 Task ${task.id} queued for retry (attempt ${task.retryCount})`);
+        }
+        else if (errorResult.fixTaskId) {
+            // Fix task created, mark current as failed
+            // Update both stats
+            this.stats.failed++;
+            this.sessionStats.failed++;
+            this.recordAction(`task_failed:${task.id}`);
+            task.status = 'failed';
+            task.result = result;
+            task.fixTaskId = errorResult.fixTaskId;
+            await this.taskQueue.update(task);
+            this.logger.info(`📥 Fix task ${errorResult.fixTaskId} created for failed task`);
+        }
+    }
+    async createEmptyFile(filePath) {
+        try {
+            // 确保目录存在
+            await fs.mkdir(path.dirname(filePath), { recursive: true });
+            // 创建空文件（带基本模板）
+            const ext = path.extname(filePath);
+            let content = '';
+            if (ext === '.ts') {
+                content = '// Auto-generated file\nexport {};\n';
+            }
+            else if (ext === '.tsx') {
+                content = '// Auto-generated file\nexport default function Component() {\n  return null;\n}\n';
+            }
+            await fs.writeFile(filePath, content, 'utf-8');
+            this.logger.info(`✅ 创建缺失文件: ${filePath}`);
+        }
+        catch (error) {
+            this.logger.error(`❌ 创建文件失败: ${error.message}`);
         }
     }
     async generateFollowUpTasks(completedTask, result) {

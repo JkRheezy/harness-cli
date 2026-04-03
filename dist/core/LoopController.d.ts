@@ -1,6 +1,14 @@
 import { EventEmitter } from 'events';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
 import { OrchestrationConfig } from '../types/orchestration';
+export interface UnattendedConfig {
+    enabled: boolean;
+    maxConsecutiveErrors: number;
+    pauseOnHighErrorRate: boolean;
+    errorRateThreshold: number;
+    autoResume: boolean;
+    resumeDelay: number;
+}
 export interface LoopConfig {
     llm: {
         provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -27,6 +35,7 @@ export interface LoopConfig {
         enabled?: boolean;
         skillsPath?: string;
     };
+    unattended?: UnattendedConfig;
 }
 export interface LoopOptions {
     maxDuration: number;
@@ -64,7 +73,13 @@ export declare class LoopController extends EventEmitter {
     private businessContext?;
     private useLangGraph;
     private harnessGraph?;
+    private healthStats;
     constructor(config: LoopConfig);
+    private setupProcessHandlers;
+    private gracefulShutdown;
+    private checkHealth;
+    private recordTaskStatus;
+    private waitForResume;
     private initializeLangGraph;
     getArchitectureDiagram(): Promise<string>;
     saveArchitectureDiagram(outputPath: string): Promise<void>;
@@ -81,6 +96,12 @@ export declare class LoopController extends EventEmitter {
     private createTasksFromPlans;
     private executeTask;
     private processResult;
+    private classifyError;
+    private handleTransientError;
+    private handleFileNotFoundError;
+    private handleDependencyError;
+    private handlePermanentError;
+    private createEmptyFile;
     private generateFollowUpTasks;
     private generateFixTask;
     private createPR;

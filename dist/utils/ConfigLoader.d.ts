@@ -1,4 +1,12 @@
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
+export interface UnattendedConfig {
+    enabled: boolean;
+    maxConsecutiveErrors: number;
+    pauseOnHighErrorRate: boolean;
+    errorRateThreshold: number;
+    autoResume: boolean;
+    resumeDelay: number;
+}
 export interface HarnessConfig {
     llm: {
         provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -30,6 +38,7 @@ export interface HarnessConfig {
     projectPath?: string;
     evolution?: EvolutionConfig;
     businessContext?: BusinessContext;
+    unattended?: UnattendedConfig;
 }
 export declare class ConfigLoader {
     static load(configPath: string): Promise<HarnessConfig>;

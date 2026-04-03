@@ -84,6 +84,8 @@ export class TaskExecutor {
       
       // 3. 执行步骤
       const results = [];
+      let stepError = null;
+      
       for (let i = 0; i < plan.steps.length; i++) {
         const step = plan.steps[i];
         this.logger.info(`  [${i + 1}/${plan.steps.length}] ${step.description}`);
@@ -96,17 +98,28 @@ export class TaskExecutor {
           });
         }
         
-        const result = await this.executeStep(step, options);
-        results.push(result);
-        
-        // 更新上下文
-        this.context.push({
-          role: 'assistant',
-          content: `Completed: ${step.description}\nResult: ${JSON.stringify(result)}`
-        });
+        try {
+          const result = await this.executeStep(step, options);
+          results.push(result);
+          
+          // 更新上下文
+          this.context.push({
+            role: 'assistant',
+            content: `Completed: ${step.description}\nResult: ${JSON.stringify(result)}`
+          });
+        } catch (error: any) {
+          this.logger.error(`❌ Step ${i + 1} failed:`, error.message);
+          stepError = error;
+          results.push({
+            step: step.description,
+            status: 'failed',
+            error: error.message
+          });
+          // 继续执行后续步骤，不中断
+        }
       }
       
-      // 4. 验证结果
+      // 4. 验证结果（无论步骤是否成功，都进行验证）
       const validation = await this.validateResults(task, results, options.dryRun);
       
       // 5. 创建分支（如果有代码变更）
@@ -117,15 +130,19 @@ export class TaskExecutor {
       
       const duration = Date.now() - startTime;
       
+      // 如果有步骤错误，任务标记为失败
+      const hasError = stepError !== null || !validation.success;
+      
       return {
-        status: validation.success ? 'success' : 'failed',
+        status: hasError ? 'failed' : 'success',
         plan,
         results,
         validation,
         branch,
         hasChanges: validation.hasChanges,
         summary: await this.generateSummary(task, results),
-        duration
+        duration,
+        error: stepError?.message
       };
       
     } catch (error: any) {
@@ -232,12 +249,28 @@ export class TaskExecutor {
   }
 
   private async executeStep(step: any, options: ExecuteOptions): Promise<any> {
+    const path = await import('path');
+    
     switch (step.type) {
       case 'read_file':
+        // 添加存在性检查
+        const exists = await this.fileExists(step.path);
+        if (!exists) {
+          this.logger.warn(`⚠️ File not found: ${step.path}, skipping...`);
+          return { 
+            type: 'read_file', 
+            path: step.path, 
+            skipped: true, 
+            reason: 'File not found' 
+          };
+        }
         return await this.readFile(step.path);
         
       case 'write_file':
         if (!options.dryRun) {
+          // 确保目录存在
+          await this.ensureDirectoryExists(path.dirname(step.path));
+          
           // 如果没有提供 content，先生成代码
           let content = step.content;
           if (!content) {
@@ -250,6 +283,16 @@ export class TaskExecutor {
         
       case 'edit_file':
         if (!options.dryRun) {
+          // 添加文件存在性检查
+          const fileExists = await this.fileExists(step.path);
+          if (!fileExists) {
+            this.logger.warn(`⚠️ File not found for edit: ${step.path}, creating new file...`);
+            await this.ensureDirectoryExists(path.dirname(step.path));
+            const content = step.content || step.newString || '';
+            await this.writeFile(step.path, content);
+            return { type: 'edit_file', path: step.path, created: true };
+          }
+          
           // 如果没有提供 oldString/newString，先生成修改内容
           let { oldString, newString } = step;
           if (!oldString || !newString) {
@@ -413,10 +456,28 @@ export class TaskExecutor {
   private async fileExists(filePath: string): Promise<boolean> {
     try {
       const fs = await import('fs/promises');
-      await fs.access(filePath);
+      const pathModule = await import('path');
+      const fullPath = pathModule.join(this.workingDir, filePath);
+      await fs.access(fullPath);
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Ensure directory exists, create if not
+   */
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
+    const fs = await import('fs/promises');
+    const pathModule = await import('path');
+    const fullPath = pathModule.join(this.workingDir, dirPath);
+    
+    try {
+      await fs.mkdir(fullPath, { recursive: true });
+    } catch (error: any) {
+      // 目录已存在或其他错误
+      this.logger.debug(`Directory creation note: ${error.message}`);
     }
   }
 

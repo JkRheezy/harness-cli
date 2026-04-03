@@ -40,6 +40,10 @@ export declare class TaskExecutor {
      * Check if file exists
      */
     private fileExists;
+    /**
+     * Ensure directory exists, create if not
+     */
+    private ensureDirectoryExists;
     private createBranch;
     private callLLM;
     private getSystemPrompt;

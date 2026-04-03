@@ -19,10 +19,16 @@ describe('Bootstrap Types', () => {
     expect(input.techStack.language).toBe('typescript');
   });
 
-  it('should validate layer dependencies order', () => {
-    const layerOrder: LayerName[] = ['types', 'config', 'repo', 'service', 'runtime', 'ui'];
+  it('should validate all LayerName union type values', () => {
+    const validLayers: LayerName[] = ['types', 'config', 'repo', 'service', 'runtime', 'ui'];
     
-    expect(layerOrder[0]).toBe('types');
-    expect(layerOrder[5]).toBe('ui');
+    // Verify all six layer names are valid
+    expect(validLayers).toHaveLength(6);
+    expect(validLayers).toContain('types');
+    expect(validLayers).toContain('config');
+    expect(validLayers).toContain('repo');
+    expect(validLayers).toContain('service');
+    expect(validLayers).toContain('runtime');
+    expect(validLayers).toContain('ui');
   });
 });

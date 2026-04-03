@@ -16,13 +16,13 @@ export interface TechStackChoice {
   frontend?: 'nextjs' | 'react' | 'vue' | 'none';
   backend?: 'nextjs-api' | 'express' | 'fastify' | 'none';
   database?: 'postgresql' | 'mongodb' | 'sqlite' | 'none';
-  deployment?: 'vercel' | 'docker' | 'aws';
+  deployment?: 'vercel' | 'docker' | 'aws' | 'none';
 }
 
 export interface PatternChoice {
   name: string;
   version?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }
 
 export interface BootstrapResult {
