@@ -1,0 +1,68 @@
+# {{projectName}} - Agent 协作指南
+
+> 本文档是 AI Agent 的入口指南，长度控制在 80-120 行
+
+## 1. 快速开始 (2分钟)
+
+### 1.1 项目概述
+- **项目名称**: {{projectName}}
+- **技术栈**: {{techStack}}
+- **核心功能**: {{description}}
+
+### 1.2 环境准备
+```bash
+{{#each setupCommands}}
+{{{this}}}
+{{/each}}
+```
+
+### 1.3 启动开发环境
+```bash
+{{{startCommand}}}
+```
+
+## 2. 项目结构
+
+```
+{{projectName}}/
+├── src/
+│   ├── types/          # Layer 1: 类型定义
+│   ├── config/         # Layer 2: 配置管理
+│   ├── repo/           # Layer 3: 数据访问
+│   ├── service/        # Layer 4: 业务逻辑
+│   ├── runtime/        # Layer 5: 运行时
+│   └── ui/             # Layer 6: 界面层
+├── docs/               # 文档目录
+├── tests/              # 测试代码
+└── scripts/            # 工具脚本
+```
+
+## 3. 关键文档索引
+
+| 文档 | 路径 | 阅读时间 | 描述 |
+|------|------|----------|------|
+{{#each documentMap}}
+| {{document}} | {{path}} | {{readingTime}} | {{description}} |
+{{/each}}
+
+## 4. 常见任务
+
+{{#each commonTasks}}
+### 4.{{@index}} {{name}}
+{{#each steps}}
+{{@index}}. {{this}}
+{{/each}}
+
+{{/each}}
+
+## 5. 重要约束
+
+{{#each constraints}}
+- {{#if (eq type 'must')}}✅{{else if (eq type 'must-not')}}❌{{else if (eq type 'should')}}🟢{{else}}⚠️{{/if}} **{{description}}**
+{{/each}}
+
+## 6. 寻求帮助
+
+- 查看 docs/references/troubleshooting.md
+- 搜索历史 Issues
+- 询问项目维护者
