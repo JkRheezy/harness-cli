@@ -18,6 +18,9 @@ import { EvolutionConfig, BusinessContext } from '../evolution/types';
 import { EvolutionTask } from '../evolution/AutoEvolution';
 import { HarnessGraph } from '../orchestration/graph/HarnessGraph';
 import { OrchestrationConfig } from '../types/orchestration';
+import { TelemetryProvider } from '../telemetry/types';
+import { FileAdapter } from '../telemetry/adapters/FileAdapter';
+import { LoopMetricsCollector } from '../telemetry/collectors/LoopMetricsCollector';
 
 export interface UnattendedConfig {
   enabled: boolean;           // 是否启用无人值守模式
@@ -60,6 +63,7 @@ export interface LoopConfig {
 export interface LoopOptions {
   maxDuration: number;
   dryRun?: boolean;
+  telemetry?: TelemetryProvider;
 }
 
 export interface SessionStats {
@@ -115,6 +119,11 @@ export class LoopController extends EventEmitter {
     isPaused: false
   };
 
+  // Telemetry
+  private telemetry: TelemetryProvider;
+  private loopMetrics: LoopMetricsCollector;
+  private currentTaskSpan?: any;
+
   constructor(config: LoopConfig) {
     super();
     this.config = config;
@@ -161,6 +170,15 @@ export class LoopController extends EventEmitter {
       escalated: 0,
       startTime: Date.now()
     };
+
+    // Initialize telemetry
+    this.telemetry = new FileAdapter({
+      outputDir: path.join(workingDir, '.harness', 'telemetry'),
+      maxFileSizeMB: 10,
+      retentionDays: 7
+    });
+
+    this.loopMetrics = new LoopMetricsCollector(this.telemetry);
 
     // Initialize LangGraph
     this.useLangGraph = config.orchestration !== undefined;
@@ -389,9 +407,41 @@ export class LoopController extends EventEmitter {
         
         this.logger.info(`📋 开始执行任务: ${this.currentTask.title}`);
         this.recordAction(`task_start:${this.currentTask.id}`);
-        
+
+        // Record telemetry before task execution
+        const taskStartTime = Date.now();
+        this.loopMetrics.recordTaskStart(
+          this.currentTask.type || 'unknown',
+          this.currentTask.id
+        );
+        this.loopMetrics.recordQueueDepth(await this.taskQueue.getPendingCount());
+
+        this.currentTaskSpan = this.loopMetrics.startTaskSpan(
+          this.currentTask.type || 'unknown',
+          this.currentTask.title
+        );
+
         // 执行任务
         const result = await this.executeTask(this.currentTask, options);
+
+        // Record telemetry after task execution
+        const duration = Date.now() - taskStartTime;
+        this.loopMetrics.recordTaskComplete(
+          this.currentTask.type || 'unknown',
+          this.currentTask.id,
+          duration,
+          result.status === 'success'
+        );
+
+        if (this.currentTaskSpan) {
+          this.telemetry.addSpanEvent(this.currentTaskSpan, 'task.completed', {
+            status: result.status,
+            duration,
+            hasChanges: result.hasChanges
+          });
+          this.telemetry.endSpan(this.currentTaskSpan, result.status === 'success' ? 'ok' : 'error');
+          this.currentTaskSpan = undefined;
+        }
         
         // 处理结果
         await this.processResult(this.currentTask, result);
@@ -431,6 +481,12 @@ export class LoopController extends EventEmitter {
     
     // 清理资源
     await this.cleanup();
+
+    // Flush telemetry before exit
+    await this.telemetry.flush();
+    await this.telemetry.close();
+
+    this.emit('stopped', { timestamp: Date.now() });
   }
 
   async getStatus(): Promise<any> {
@@ -1176,6 +1232,13 @@ export class LoopController extends EventEmitter {
   }
 
   private async handleSafetyViolation(check: any): Promise<void> {
+    // Record safety check telemetry
+    this.loopMetrics.recordSafetyCheckTriggered(check.reason || 'unknown');
+    this.telemetry.log('warn', `Safety check triggered: ${check.reason}`, {
+      action: check.action,
+      taskId: this.currentTask?.id
+    });
+
     switch (check.action) {
       case 'pause':
         this.logger.warn('⏸️  Loop 已暂停');
