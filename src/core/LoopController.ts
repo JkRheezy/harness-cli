@@ -18,9 +18,8 @@ import { EvolutionConfig, BusinessContext } from '../evolution/types';
 import { EvolutionTask } from '../evolution/AutoEvolution';
 import { HarnessGraph } from '../orchestration/graph/HarnessGraph';
 import { OrchestrationConfig } from '../types/orchestration';
-import { TelemetryProvider } from '../telemetry/types';
-import { FileAdapter } from '../telemetry/adapters/FileAdapter';
-import { LoopMetricsCollector } from '../telemetry/collectors/LoopMetricsCollector';
+import { TelemetryProvider, FileAdapter } from '../telemetry';
+import { LoopMetricsCollector } from '../telemetry/collectors';
 
 export interface UnattendedConfig {
   enabled: boolean;           // 是否启用无人值守模式
