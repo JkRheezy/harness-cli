@@ -9,8 +9,8 @@ Harness includes a self-bootstrapping telemetry system for observing its own ope
 ```
 TelemetryProvider (Abstract)
     ├── FileAdapter (Default) - JSONL files
-    ├── MemoryAdapter (Testing)
-    └── LangSmithAdapter (Optional SaaS)
+    └── MemoryAdapter (Testing)
+    └── LangSmithAdapter (Future - Optional SaaS)
 ```
 
 ## Quick Start
@@ -59,7 +59,7 @@ harness telemetry --dir ./custom/telemetry
 Add to your project's telemetry setup:
 
 ```typescript
-import { FileAdapter, LoopMetricsCollector } from 'harness-cli/telemetry';
+import { FileAdapter, LoopMetricsCollector } from '../telemetry';
 
 const telemetry = new FileAdapter({
   outputDir: '.harness/telemetry',
@@ -70,21 +70,15 @@ const telemetry = new FileAdapter({
 const metrics = new LoopMetricsCollector(telemetry);
 ```
 
-### Using LangSmith (Optional)
+### Configuration Options
 
-```bash
-export LANGCHAIN_API_KEY=your-key
-export LANGCHAIN_PROJECT=your-project
-```
-
-Then configure in code:
+FileAdapter supports the following options:
 
 ```typescript
-import { LangSmithAdapter } from 'harness-cli/telemetry';
-
-const telemetry = new LangSmithAdapter({
-  apiKey: process.env.LANGCHAIN_API_KEY,
-  projectName: process.env.LANGCHAIN_PROJECT
+const telemetry = new FileAdapter({
+  outputDir: '.harness/telemetry',     // Required: Where to store files
+  maxFileSizeMB: 10,                   // Optional: Max file size (default: 10)
+  retentionDays: 7                     // Optional: Days to keep files (default: 7)
 });
 ```
 
