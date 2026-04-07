@@ -1,0 +1,1 @@
+export { FileAdapter } from './FileAdapter';
