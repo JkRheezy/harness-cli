@@ -16,7 +16,7 @@ export interface HealingResult {
  */
 export interface HealingAttempt {
   level: HealingLevel;
-  strategy: string;
+  strategy: HealingStrategyType;
   success: boolean;
   durationMs: number;
   cost: HealingCost;
