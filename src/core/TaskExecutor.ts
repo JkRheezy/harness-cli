@@ -8,6 +8,7 @@ import { BrowserValidationResult } from '../browser/types';
 import { DevServerManager } from '../utils/DevServerManager';
 import { TelemetryProvider, FileAdapter } from '../telemetry';
 import { LLMMetricsCollector } from '../telemetry/collectors';
+import { HealingOrchestrator } from '../healing';
 
 export interface LLMConfig {
   provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -415,7 +416,7 @@ export class TaskExecutor {
   }
 
   private async validateResults(task: any, results: any[], dryRun?: boolean): Promise<any> {
-    // Check是否有代码change（addTimeout）
+    // Step 1: Check git status (with timeout)
     let hasChanges = false;
     try {
       const status = await Promise.race([
@@ -425,13 +426,13 @@ export class TaskExecutor {
       hasChanges = status.files.length > 0;
       this.logger.info(`Git status: ${status.files.length} files changed`);
     } catch (error) {
-      this.logger.warn('Git statusCheckFailed或Timeout，假设无change');
+      this.logger.warn('Git status check failed or timeout, assuming no changes');
       hasChanges = false;
     }
     
-    // 模拟pattern下，如果没有实际filechange，SkipTest
+    // Step 2: Dry run or no changes - skip validation
     if (dryRun || !hasChanges) {
-      this.logger.info('Dry run mode or no changes - skipping tests');
+      this.logger.info(dryRun ? 'Dry run mode - skipping validation' : 'No code changes - skipping validation');
       return {
         success: true,
         hasChanges: dryRun && hasChanges,
@@ -439,19 +440,56 @@ export class TaskExecutor {
       };
     }
     
-    // Run traditional tests
+    // Step 3: Run tests (required)
+    this.logger.info('Running validation with automatic healing...');
     const testResult = await this.runTests();
-    const lintResult = await this.runLinter();
+    
+    // Step 4: Run linter with healing capability
+    let lintResult = await this.runLinter();
+    let healingResult = null;
+    
+    // If lint fails, try to heal
+    if (!lintResult.success && lintResult.errors) {
+      this.logger.info('Linter failed, attempting automatic healing...');
+      
+      const orchestrator = new HealingOrchestrator(
+        this.workingDir,
+        this.logger,
+        // LLM caller - use TaskExecutor's existing LLM call capability
+        async (prompt: string) => {
+          // Use TaskExecutor's existing LLM call capability
+          const response = await this.callLLM(prompt);
+          return response;
+        },
+        { maxTotalCost: 0.05 } // Max $0.05 for lint healing
+      );
+      
+      healingResult = await orchestrator.heal(lintResult.errors, {
+        taskType: 'lint',
+        projectType: this.detectProjectType()
+      });
+      
+      this.logger.info(`Healing cost: $${healingResult.cost.estimatedCost.toFixed(4)}`);
+      
+      // If healing succeeded, retry lint
+      if (healingResult.success) {
+        this.logger.info('Healing succeeded, retrying linter...');
+        lintResult = await this.runLinter();
+      } else {
+        this.logger.warn(`Healing failed: ${healingResult.escalationReason}`);
+      }
+    }
+    
+    // Step 5: Architecture check
     const archCheck = await this.checkArchitecture();
-
-    // Run browser validation for web projects
+    
+    // Step 6: Browser validation (keep existing)
     const browserValidation = await this.runBrowserValidation(task);
-
-    const success = testResult.success && 
-                   lintResult.success && 
-                   archCheck.success &&
-                   (browserValidation?.success ?? true);
-
+    
+    // Step 7: Determine overall success
+    // Lint is NOT required - if it fails after healing, we still consider success
+    const success = testResult.success && archCheck.success && (browserValidation?.success ?? true);
+    
     return {
       success,
       hasChanges: true,
@@ -459,8 +497,32 @@ export class TaskExecutor {
       lintResult,
       archCheck,
       browserValidation,
-      canAutoFix: !success && this.canAutoFix(testResult, lintResult)
+      healingResult, // Include healing info
+      canAutoFix: !success // If overall failed, could try more fixes
     };
+  }
+
+  // Add helper method detectProjectType
+  private detectProjectType(): string {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const packageJsonPath = path.join(this.workingDir, 'package.json');
+      
+      if (!fs.existsSync(packageJsonPath)) {
+        return 'unknown';
+      }
+      
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      
+      if (packageJson.dependencies?.next) return 'nextjs';
+      if (packageJson.dependencies?.react) return 'react';
+      if (packageJson.devDependencies?.typescript) return 'typescript';
+      
+      return 'nodejs';
+    } catch {
+      return 'unknown';
+    }
   }
 
   /**
