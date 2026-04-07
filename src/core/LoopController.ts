@@ -123,7 +123,7 @@ export class LoopController extends EventEmitter {
   private loopMetrics: LoopMetricsCollector;
   private currentTaskSpan?: any;
 
-  constructor(config: LoopConfig) {
+  constructor(config: LoopConfig, options?: { telemetry?: TelemetryProvider }) {
     super();
     this.config = config;
     this.logger = new Logger();
@@ -170,8 +170,8 @@ export class LoopController extends EventEmitter {
       startTime: Date.now()
     };
 
-    // Initialize telemetry
-    this.telemetry = new FileAdapter({
+    // Initialize telemetry (use provided or create default)
+    this.telemetry = options?.telemetry || new FileAdapter({
       outputDir: path.join(workingDir, '.harness', 'telemetry'),
       maxFileSizeMB: 10,
       retentionDays: 7
@@ -347,6 +347,7 @@ export class LoopController extends EventEmitter {
     
     // 主循环
     while (this.isRunning) {
+      let taskStartTime = 0;
       try {
         // 检查是否超过最大运行时间
         if (this.shouldStop(options.maxDuration)) {
@@ -408,12 +409,15 @@ export class LoopController extends EventEmitter {
         this.recordAction(`task_start:${this.currentTask.id}`);
 
         // Record telemetry before task execution
-        const taskStartTime = Date.now();
-        this.loopMetrics.recordTaskStart(
-          this.currentTask.type || 'unknown',
-          this.currentTask.id
-        );
-        this.loopMetrics.recordQueueDepth(await this.taskQueue.getPendingCount());
+        taskStartTime = Date.now();
+        const pendingCount = await this.taskQueue.getPendingCount();
+        this.safeTelemetry(() => {
+          this.loopMetrics.recordTaskStart(
+            this.currentTask.type || 'unknown',
+            this.currentTask.id
+          );
+          this.loopMetrics.recordQueueDepth(pendingCount);
+        });
 
         this.currentTaskSpan = this.loopMetrics.startTaskSpan(
           this.currentTask.type || 'unknown',
@@ -425,20 +429,24 @@ export class LoopController extends EventEmitter {
 
         // Record telemetry after task execution
         const duration = Date.now() - taskStartTime;
-        this.loopMetrics.recordTaskComplete(
-          this.currentTask.type || 'unknown',
-          this.currentTask.id,
-          duration,
-          result.status === 'success'
-        );
+        this.safeTelemetry(() => {
+          this.loopMetrics.recordTaskComplete(
+            this.currentTask.type || 'unknown',
+            this.currentTask.id,
+            duration,
+            result.status === 'success'
+          );
+        });
 
         if (this.currentTaskSpan) {
-          this.telemetry.addSpanEvent(this.currentTaskSpan, 'task.completed', {
-            status: result.status,
-            duration,
-            hasChanges: result.hasChanges
+          this.safeTelemetry(() => {
+            this.telemetry.addSpanEvent(this.currentTaskSpan, 'task.completed', {
+              status: result.status,
+              duration,
+              hasChanges: result.hasChanges
+            });
+            this.telemetry.endSpan(this.currentTaskSpan, result.status === 'success' ? 'ok' : 'error');
           });
-          this.telemetry.endSpan(this.currentTaskSpan, result.status === 'success' ? 'ok' : 'error');
           this.currentTaskSpan = undefined;
         }
         
@@ -462,6 +470,25 @@ export class LoopController extends EventEmitter {
         this.recordAction(`error:${error.message}`);
         // 记录失败状态（无人值守模式）
         this.recordTaskStatus('failed');
+        
+        // Record failure telemetry
+        const duration = Date.now() - taskStartTime;
+        this.safeTelemetry(() => {
+          this.loopMetrics.recordTaskComplete(
+            this.currentTask?.type || 'unknown',
+            this.currentTask?.id || 'unknown',
+            duration,
+            false
+          );
+        });
+        
+        if (this.currentTaskSpan) {
+          this.safeTelemetry(() => {
+            this.telemetry.endSpan(this.currentTaskSpan, 'error');
+          });
+          this.currentTaskSpan = undefined;
+        }
+        
         await this.handleLoopError(error);
       }
     }
@@ -1232,10 +1259,12 @@ export class LoopController extends EventEmitter {
 
   private async handleSafetyViolation(check: any): Promise<void> {
     // Record safety check telemetry
-    this.loopMetrics.recordSafetyCheckTriggered(check.reason || 'unknown');
-    this.telemetry.log('warn', `Safety check triggered: ${check.reason}`, {
-      action: check.action,
-      taskId: this.currentTask?.id
+    this.safeTelemetry(() => {
+      this.loopMetrics.recordSafetyCheckTriggered(check.reason || 'unknown');
+      this.telemetry.log('warn', `Safety check triggered: ${check.reason}`, {
+        action: check.action,
+        taskId: this.currentTask?.id
+      });
     });
 
     switch (check.action) {
@@ -1351,6 +1380,18 @@ export class LoopController extends EventEmitter {
 
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Safely execute telemetry call without affecting main flow.
+   */
+  private safeTelemetry(fn: () => void): void {
+    try {
+      fn();
+    } catch (error) {
+      // Telemetry failures should not affect main execution
+      this.logger.debug('Telemetry error (non-critical):', error);
+    }
   }
 
   private isFatalError(error: any): boolean {
