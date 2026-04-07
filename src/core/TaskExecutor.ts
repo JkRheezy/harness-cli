@@ -1303,13 +1303,22 @@ Example:
   }
 
   private async runLinter(): Promise<any> {
-    this.logger.info('🔍 Run linter...');
-    const result = await this.runCommand('npm run lint');
+    this.logger.info('🔍 Running linter...');
+    
+    // Try JSON format first for better parsing
+    let result = await this.runCommand('npm run lint -- --format json');
+    
+    // If JSON format fails or isn't supported, fall back to standard
+    if (result.exitCode !== 0 && !result.stdout.includes('[')) {
+      this.logger.info('JSON lint format not available, using standard format');
+      result = await this.runCommand('npm run lint');
+    }
     
     return {
       success: result.exitCode === 0,
       output: result.stdout,
-      errors: result.stderr
+      errors: result.stderr,
+      exitCode: result.exitCode
     };
   }
 
