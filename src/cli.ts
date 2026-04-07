@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
 import { LoopController } from './core/LoopController';
@@ -315,19 +316,29 @@ program
   .option('-d, --dir <dir>', 'Telemetry directory', '.harness/telemetry')
   .action(async (options) => {
     try {
+      const telemetryDir = path.resolve(options.dir);
+      
+      // Check if directory exists
+      if (!fs.existsSync(telemetryDir)) {
+        logger.error(`Telemetry directory not found: ${options.dir}`);
+        logger.info('Run "harness loop" first to generate telemetry data.');
+        process.exit(1);
+      }
+      
       const dashboard = new TelemetryDashboard({
-        telemetryDir: path.resolve(options.dir),
+        telemetryDir,
         refreshIntervalMs: 5000
       });
       
       if (options.watch) {
+        logger.info('Starting telemetry dashboard (Ctrl+C to exit)...\n');
         await dashboard.watch();
       } else {
         const report = await dashboard.generateReport();
         console.log(report);
       }
     } catch (error) {
-      console.error('Error displaying telemetry:', error);
+      logger.error('Error displaying telemetry:', error);
       process.exit(1);
     }
   });
