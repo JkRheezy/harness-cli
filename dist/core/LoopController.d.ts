@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { EvolutionConfig, BusinessContext } from '../evolution/types';
 import { OrchestrationConfig } from '../types/orchestration';
+import { TelemetryProvider } from '../telemetry';
 export interface UnattendedConfig {
     enabled: boolean;
     maxConsecutiveErrors: number;
@@ -40,6 +41,7 @@ export interface LoopConfig {
 export interface LoopOptions {
     maxDuration: number;
     dryRun?: boolean;
+    telemetry?: TelemetryProvider;
 }
 export interface SessionStats {
     completed: number;
@@ -74,7 +76,12 @@ export declare class LoopController extends EventEmitter {
     private useLangGraph;
     private harnessGraph?;
     private healthStats;
-    constructor(config: LoopConfig);
+    private telemetry;
+    private loopMetrics;
+    private currentTaskSpan?;
+    constructor(config: LoopConfig, options?: {
+        telemetry?: TelemetryProvider;
+    });
     private setupProcessHandlers;
     private gracefulShutdown;
     private checkHealth;
@@ -119,6 +126,10 @@ export declare class LoopController extends EventEmitter {
     private loadCheckpoint;
     private cleanup;
     private sleep;
+    /**
+     * Safely execute telemetry call without affecting main flow.
+     */
+    private safeTelemetry;
     private isFatalError;
     /**
      * Set business context for evolution analysis

@@ -37,6 +37,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const commander_1 = require("commander");
 const LoopController_1 = require("./core/LoopController");
 const TaskSubmitter_1 = require("./core/TaskSubmitter");
@@ -45,6 +47,7 @@ const ReviewAgent_1 = require("./core/ReviewAgent");
 const ConfigLoader_1 = require("./utils/ConfigLoader");
 const Logger_1 = require("./utils/Logger");
 const visualize_1 = __importDefault(require("./commands/visualize"));
+const TelemetryDashboard_1 = require("./telemetry/dashboard/TelemetryDashboard");
 const program = new commander_1.Command();
 const logger = new Logger_1.Logger();
 program
@@ -310,5 +313,38 @@ function formatDuration(ms) {
 }
 // ========== 可视化命令 ==========
 program.addCommand(visualize_1.default);
+// ========== Telemetry Dashboard 命令 ==========
+program
+    .command('telemetry')
+    .description('View telemetry dashboard')
+    .option('-w, --watch', 'Watch mode with auto-refresh', false)
+    .option('-d, --dir <dir>', 'Telemetry directory', '.harness/telemetry')
+    .action(async (options) => {
+    try {
+        const telemetryDir = path.resolve(options.dir);
+        // Check if directory exists
+        if (!fs.existsSync(telemetryDir)) {
+            logger.error(`Telemetry directory not found: ${options.dir}`);
+            logger.info('Run "harness loop" first to generate telemetry data.');
+            process.exit(1);
+        }
+        const dashboard = new TelemetryDashboard_1.TelemetryDashboard({
+            telemetryDir,
+            refreshIntervalMs: 5000
+        });
+        if (options.watch) {
+            logger.info('Starting telemetry dashboard (Ctrl+C to exit)...\n');
+            await dashboard.watch();
+        }
+        else {
+            const report = await dashboard.generateReport();
+            console.log(report);
+        }
+    }
+    catch (error) {
+        logger.error('Error displaying telemetry:', error);
+        process.exit(1);
+    }
+});
 program.parse();
 //# sourceMappingURL=cli.js.map

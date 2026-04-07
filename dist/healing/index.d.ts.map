@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../src/healing/index.ts"],"names":[],"mappings":"AACA,cAAc,SAAS,CAAC;AAGxB,OAAO,EAAE,eAAe,EAAE,MAAM,mBAAmB,CAAC;AACpD,OAAO,EAAE,mBAAmB,EAAE,MAAM,uBAAuB,CAAC;AAG5D,OAAO,EAAE,iBAAiB,EAAE,MAAM,gCAAgC,CAAC;AACnE,OAAO,EAAE,gBAAgB,EAAE,MAAM,+BAA+B,CAAC;AAGjE,OAAO,EAAE,gBAAgB,EAAE,MAAM,qBAAqB,CAAC"}

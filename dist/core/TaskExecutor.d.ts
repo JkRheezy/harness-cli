@@ -1,3 +1,4 @@
+import { TelemetryProvider } from '../telemetry';
 export interface LLMConfig {
     provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
     model: string;
@@ -22,12 +23,16 @@ export declare class TaskExecutor {
     private workingDir;
     private devServerManager;
     private devServerUrl;
-    constructor(config: LLMConfig, workingDir?: string);
+    private telemetry;
+    private llmMetrics;
+    constructor(config: LLMConfig, workingDir?: string, telemetry?: TelemetryProvider);
+    private safeTelemetry;
     execute(task: any, options?: ExecuteOptions): Promise<any>;
     private prepareContext;
     private generatePlan;
     private executeStep;
     private validateResults;
+    private detectProjectType;
     /**
      * Run browser-based validation
      */
@@ -45,6 +50,7 @@ export declare class TaskExecutor {
      */
     private ensureDirectoryExists;
     private createBranch;
+    private estimateTokens;
     private callLLM;
     private getSystemPrompt;
     private buildPlanPrompt;
@@ -61,6 +67,10 @@ export declare class TaskExecutor {
     private findRelevantCode;
     private runTests;
     private runLinter;
+    /**
+     * Parse ESLint JSON output into RuleViolations
+     */
+    private parseLintOutput;
     private checkArchitecture;
     private canAutoFix;
     private shouldRetry;
