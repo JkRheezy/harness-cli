@@ -69,6 +69,8 @@ export interface ErrorClassification {
     missingFile?: string;
     missingConfig?: string;
     commandFailed?: string;
+    missingModule?: string;
+    missingCommand?: string;
   };
 }
 
