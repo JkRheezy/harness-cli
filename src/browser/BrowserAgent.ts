@@ -1,6 +1,16 @@
 import { Logger } from '../utils/Logger';
+// Temporary workaround for missing Playwright
+// @ts-ignore
 import type { Browser, Page } from 'playwright';
-import { chromium, firefox, webkit } from 'playwright';
+let chromium: any, firefox: any, webkit: any;
+try {
+  const pw = require('playwright');
+  chromium = pw.chromium;
+  firefox = pw.firefox;
+  webkit = pw.webkit;
+} catch (e) {
+  // Playwright not available
+}
 import {
   BrowserType,
   DOMSnapshot,

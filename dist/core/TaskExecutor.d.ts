@@ -33,7 +33,7 @@ export declare class TaskExecutor {
      */
     private runBrowserValidation;
     /**
-     * 停止开发服务器（在任务完成后调用）
+     * StopDev server（在任务complete后调用）
      */
     stopDevServer(): Promise<void>;
     /**

@@ -6,8 +6,13 @@ param(
     [int]$MaxIterations = 100
 )
 
-$ harnessCliPath = "D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli"
-$ projectPath = "D:\test\my-project"
+# 设置 UTF-8 编码，避免乱码
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
+
+$harnessCliPath = "D:\work\study\Kimi_Agent_OpenAI_Harness\harness-cli"
+$projectPath = "D:\test\my-project"
 
 function Clear-Screen {
     # Clear screen properly in different environments
@@ -15,7 +20,7 @@ function Clear-Screen {
         Clear-Host
     } else {
         # For remote/SSH sessions
-        Write-Host "`n" * 50
+        Write-Host ("`n" * 50)
     }
 }
 
@@ -72,13 +77,13 @@ function Get-LogTail {
         return $lines | ForEach-Object {
             # Colorize log levels
             $line = $_
-            if ($line -match "error|❌|failed") {
+            if ($line -match "error|\[ERR\]|failed") {
                 return "[RED]$line[RESET]"
-            } elseif ($line -match "warn|⚠️") {
+            } elseif ($line -match "warn|\[WARN\]") {
                 return "[YELLOW]$line[RESET]"
-            } elseif ($line -match "success|✅|completed") {
+            } elseif ($line -match "success|\[OK\]|completed") {
                 return "[GREEN]$line[RESET]"
-            } elseif ($line -match "info|🚀|📋|📥") {
+            } elseif ($line -match "info|\[INFO\]|\[PLAN\]|\[AI\]") {
                 return "[CYAN]$line[RESET]"
             }
             return $line
@@ -94,14 +99,14 @@ function Show-Dashboard {
     
     Clear-Screen
     
-    Write-Host "╔══════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║            🤖 HARNESS LOOP - REAL-TIME MONITOR                  ║" -ForegroundColor Cyan
-    Write-Host "╚══════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host "           HARNESS LOOP - REAL-TIME MONITOR                 " -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
     Write-Host ""
     
     # Task Status Section
-    Write-Host "📊 TASK STATUS" -ForegroundColor Yellow
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
+    Write-Host "TASK STATUS" -ForegroundColor Yellow
+    Write-Host "------------------------------------------------------------" -ForegroundColor Gray
     if ($status.Error) {
         Write-Host "   Status: $($status.Error)" -ForegroundColor Red
     } else {
@@ -116,19 +121,19 @@ function Show-Dashboard {
         Write-Host "   Task Status:   $($status.TaskStatus)" -ForegroundColor $taskColor
         Write-Host "   Checkpoint:    $($status.CheckpointTime)" -ForegroundColor Gray
         Write-Host ""
-        Write-Host "   ✅ Completed:  $($status.Completed)" -ForegroundColor Green
-        Write-Host "   ❌ Failed:     $($status.Failed)" -ForegroundColor Red
-        Write-Host "   ⏳ Pending:    $($status.Pending)" -ForegroundColor Yellow
-        Write-Host "   🔄 Active:     $($status.Active)" -ForegroundColor Cyan
+        Write-Host "   [OK] Completed:  $($status.Completed)" -ForegroundColor Green
+        Write-Host "   [ERR] Failed:     $($status.Failed)" -ForegroundColor Red
+        Write-Host "   [WAIT] Pending:    $($status.Pending)" -ForegroundColor Yellow
+        Write-Host "   [LOOP] Active:     $($status.Active)" -ForegroundColor Cyan
     }
     Write-Host ""
     
     # Project Changes Section
-    Write-Host "📁 PROJECT CHANGES (Target: $projectPath)" -ForegroundColor Yellow
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
-    Write-Host "   📝 Modified:   $($changes.Modified)" -ForegroundColor Yellow
-    Write-Host "   ✨ New Files:  $($changes.New)" -ForegroundColor Green
-    Write-Host "   📦 AI Files:   $($changes.AIFiles)" -ForegroundColor Cyan
+    Write-Host "PROJECT CHANGES (Target: $projectPath)" -ForegroundColor Yellow
+    Write-Host "------------------------------------------------------------" -ForegroundColor Gray
+    Write-Host "   [EDIT] Modified:   $($changes.Modified)" -ForegroundColor Yellow
+    Write-Host "   [NEW] New Files:  $($changes.New)" -ForegroundColor Green
+    Write-Host "   [AI] AI Files:   $($changes.AIFiles)" -ForegroundColor Cyan
     Write-Host ""
     
     # Recent commits
@@ -141,8 +146,8 @@ function Show-Dashboard {
     Write-Host ""
     
     # Recent Logs Section
-    Write-Host "📝 RECENT LOGS (Last 10 lines)" -ForegroundColor Yellow
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
+    Write-Host "RECENT LOGS (Last 10 lines)" -ForegroundColor Yellow
+    Write-Host "------------------------------------------------------------" -ForegroundColor Gray
     $logs | ForEach-Object {
         $line = $_ -replace "\[RED\]", "" -replace "\[YELLOW\]", "" -replace "\[GREEN\]", "" -replace "\[CYAN\]", "" -replace "\[RESET\]", ""
         
@@ -161,13 +166,13 @@ function Show-Dashboard {
     Write-Host ""
     
     # Footer
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Gray
-    Write-Host "⏱️  Refresh: ${RefreshSeconds}s | Press Ctrl+C to exit" -ForegroundColor DarkGray
+    Write-Host "------------------------------------------------------------" -ForegroundColor Gray
+    Write-Host "Refresh: ${RefreshSeconds}s | Press Ctrl+C to exit" -ForegroundColor DarkGray
     Write-Host ""
 }
 
 # Main loop
-Write-Host "🔍 Starting Harness Loop Monitor..." -ForegroundColor Green
+Write-Host "Starting Harness Loop Monitor..." -ForegroundColor Green
 Write-Host "   Harness CLI: $harnessCliPath" -ForegroundColor Gray
 Write-Host "   Project:     $projectPath" -ForegroundColor Gray
 Write-Host "   Refresh:     ${RefreshSeconds}s" -ForegroundColor Gray

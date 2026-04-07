@@ -54,16 +54,16 @@ class TaskExecutor {
         this.git = (0, simple_git_1.simpleGit)(workingDir);
         this.toolRegistry = new ToolRegistry_1.ToolRegistry();
         this.devServerManager = new DevServerManager_1.DevServerManager();
-        // 初始化 LLM 客户端
+        // Init LLM 客户端
         if (config.provider === 'openai' || config.provider === 'kimi') {
-            // Kimi 使用 OpenAI 兼容接口
+            // Kimi 使用 OpenAI compatinterface
             this.openai = new openai_1.default({
                 apiKey: config.apiKey,
                 baseURL: config.baseUrl
             });
         }
         else if (config.provider === 'anthropic') {
-            // Kimi Coding Plan 使用 Anthropic 兼容接口
+            // Kimi Coding Plan 使用 Anthropic compatinterface
             this.anthropic = new sdk_1.default({
                 apiKey: config.apiKey,
                 baseURL: config.baseUrl
@@ -72,23 +72,23 @@ class TaskExecutor {
     }
     async execute(task, options = {}) {
         const startTime = Date.now();
-        this.logger.info(`🤖 开始执行任务: ${task.title}`);
+        this.logger.info(`🤖 Starting task: ${task.title}`);
         try {
-            // 1. 准备上下文
+            // 1. 准备context
             const context = await this.prepareContext(task);
-            // 2. 生成执行计划
+            // 2. GenerateExecuting plan
             const plan = await this.generatePlan(task, context);
-            // 检查 plan 和 steps 是否有效
+            // Check plan 和 steps 是否有效
             if (!plan || !plan.steps || !Array.isArray(plan.steps)) {
-                this.logger.error('❌ 生成的计划无效或为空');
+                this.logger.error('❌ Generate的plan无效或为空');
                 return {
                     status: 'failed',
                     error: 'Failed to generate valid execution plan',
                     duration: Date.now() - startTime
                 };
             }
-            this.logger.info(`📋 执行计划: ${plan.steps.length} 个步骤`);
-            // 3. 执行步骤
+            this.logger.info(`📋 Executing plan: ${plan.steps.length} steps`);
+            // 3. 执linestep
             const results = [];
             let stepError = null;
             for (let i = 0; i < plan.steps.length; i++) {
@@ -104,7 +104,7 @@ class TaskExecutor {
                 try {
                     const result = await this.executeStep(step, options);
                     results.push(result);
-                    // 更新上下文
+                    // Updatecontext
                     this.context.push({
                         role: 'assistant',
                         content: `Completed: ${step.description}\nResult: ${JSON.stringify(result)}`
@@ -118,18 +118,18 @@ class TaskExecutor {
                         status: 'failed',
                         error: error.message
                     });
-                    // 继续执行后续步骤，不中断
+                    // Continue执line后续step，不medium断
                 }
             }
-            // 4. 验证结果（无论步骤是否成功，都进行验证）
+            // 4. verifyresult（无论step是否Success，都进lineverify）
             const validation = await this.validateResults(task, results, options.dryRun);
-            // 5. 创建分支（如果有代码变更）
+            // 5. CreateBranch（如果有代码change）
             let branch = null;
             if (validation.hasChanges && !options.dryRun) {
                 branch = await this.createBranch(task);
             }
             const duration = Date.now() - startTime;
-            // 如果有步骤错误，任务标记为失败
+            // 如果有stepError，任务标记为Failed
             const hasError = stepError !== null || !validation.success;
             return {
                 status: hasError ? 'failed' : 'success',
@@ -144,7 +144,7 @@ class TaskExecutor {
             };
         }
         catch (error) {
-            this.logger.error('任务执行失败:', error);
+            this.logger.error('任务执lineFailed:', error);
             return {
                 status: 'failed',
                 error: error.message || String(error),
@@ -153,7 +153,7 @@ class TaskExecutor {
             };
         }
         finally {
-            // 停止开发服务器
+            // StopDev server
             await this.stopDevServer();
         }
     }
@@ -163,11 +163,11 @@ class TaskExecutor {
         this.logger.info('Reading AGENTS.md...');
         const agentsMd = await this.readFile('AGENTS.md');
         this.logger.info(`AGENTS.md length: ${agentsMd.length}`);
-        // 读取架构文档
+        // 读取Archdoc
         this.logger.info('Reading ARCHITECTURE.md...');
         const architecture = await this.readFile('docs/ARCHITECTURE.md');
         this.logger.info(`ARCHITECTURE.md length: ${architecture.length}`);
-        // 读取相关代码
+        // 读取相close代码
         this.logger.info('Finding relevant code...');
         const relevantCode = await this.findRelevantCode(task);
         this.logger.info(`Found ${relevantCode.length} relevant code entries`);
@@ -186,9 +186,9 @@ class TaskExecutor {
             // Log full response for debugging
             this.logger.info(`LLM Response length: ${response.length}`);
             this.logger.info(`LLM Response preview: ${response.substring(0, 800)}...`);
-            // 解析计划
+            // Parsing plan
             try {
-                // 尝试提取 JSON 代码块
+                // Attempt提取 JSON 代码block
                 const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) ||
                     response.match(/```\s*([\s\S]*?)\s*```/);
                 if (jsonMatch && jsonMatch[1]) {
@@ -199,7 +199,7 @@ class TaskExecutor {
                         return parsed;
                     }
                 }
-                // 尝试匹配 JSON 对象
+                // Attempt匹配 JSON object
                 const jsonObjectMatch = response.match(/(\{[\s\S]*\})/);
                 if (jsonObjectMatch) {
                     this.logger.info('Found JSON object, parsing...');
@@ -237,7 +237,7 @@ class TaskExecutor {
         const path = await Promise.resolve().then(() => __importStar(require('path')));
         switch (step.type) {
             case 'read_file':
-                // 添加存在性检查
+                // add存在性Check
                 const exists = await this.fileExists(step.path);
                 if (!exists) {
                     this.logger.warn(`⚠️ File not found: ${step.path}, skipping...`);
@@ -251,9 +251,9 @@ class TaskExecutor {
                 return await this.readFile(step.path);
             case 'write_file':
                 if (!options.dryRun) {
-                    // 确保目录存在
+                    // 确保dir存在
                     await this.ensureDirectoryExists(path.dirname(step.path));
-                    // 如果没有提供 content，先生成代码
+                    // 如果没有提供 content，先Generating code
                     let content = step.content;
                     if (!content) {
                         this.logger.info(`    Generating code for ${step.path}...`);
@@ -264,7 +264,7 @@ class TaskExecutor {
                 return { path: step.path, action: 'written' };
             case 'edit_file':
                 if (!options.dryRun) {
-                    // 添加文件存在性检查
+                    // addfile存在性Check
                     const fileExists = await this.fileExists(step.path);
                     if (!fileExists) {
                         this.logger.warn(`⚠️ File not found for edit: ${step.path}, creating new file...`);
@@ -273,7 +273,7 @@ class TaskExecutor {
                         await this.writeFile(step.path, content);
                         return { type: 'edit_file', path: step.path, created: true };
                     }
-                    // 如果没有提供 oldString/newString，先生成修改内容
+                    // 如果没有提供 oldString/newString，先Generatemodcontent
                     let { oldString, newString } = step;
                     if (!oldString || !newString) {
                         this.logger.info(`    Generating edit for ${step.path}...`);
@@ -300,7 +300,7 @@ class TaskExecutor {
         }
     }
     async validateResults(task, results, dryRun) {
-        // 检查是否有代码变更（添加超时）
+        // Check是否有代码change（addTimeout）
         let hasChanges = false;
         try {
             const status = await Promise.race([
@@ -311,10 +311,10 @@ class TaskExecutor {
             this.logger.info(`Git status: ${status.files.length} files changed`);
         }
         catch (error) {
-            this.logger.warn('Git 状态检查失败或超时，假设无变更');
+            this.logger.warn('Git statusCheckFailed或Timeout，假设无change');
             hasChanges = false;
         }
-        // 模拟模式下，如果没有实际文件变更，跳过测试
+        // 模拟pattern下，如果没有实际filechange，SkipTest
         if (dryRun || !hasChanges) {
             this.logger.info('Dry run mode or no changes - skipping tests');
             return {
@@ -347,6 +347,11 @@ class TaskExecutor {
      * Run browser-based validation
      */
     async runBrowserValidation(task) {
+        // Skip browser validation if disabled via environment variable
+        if (process.env.SKIP_BROWSER_VALIDATION === 'true') {
+            this.logger.info('🌐 Browser validation skipped (SKIP_BROWSER_VALIDATION=true)');
+            return null;
+        }
         const hasPackageJson = await this.fileExists('package.json');
         if (!hasPackageJson) {
             this.logger.info('📦 No package.json found, skipping browser validation');
@@ -354,17 +359,17 @@ class TaskExecutor {
         }
         this.logger.info('🌐 Starting browser validation...');
         try {
-            // 自动启动或复用开发服务器
+            // 自动Start或复用Dev server
             let devServerUrl = this.devServerUrl;
             if (!devServerUrl) {
                 devServerUrl = await this.devServerManager.start({
-                    timeout: 120000, // 2分钟超时
+                    timeout: 120000, // 2分钟Timeout
                     port: 3000
                 });
                 this.devServerUrl = devServerUrl;
                 this.logger.info(`✅ Dev server ready at ${devServerUrl}`);
             }
-            // 执行浏览器验证
+            // 执lineBrowser validation
             const validator = new BrowserValidator_1.BrowserValidator();
             const result = await validator.validate({
                 url: devServerUrl,
@@ -401,7 +406,7 @@ class TaskExecutor {
         }
     }
     /**
-     * 停止开发服务器（在任务完成后调用）
+     * StopDev server（在任务complete后调用）
      */
     async stopDevServer() {
         if (this.devServerUrl) {
@@ -436,26 +441,26 @@ class TaskExecutor {
             await fs.mkdir(fullPath, { recursive: true });
         }
         catch (error) {
-            // 目录已存在或其他错误
+            // dir已存在或其他Error
             this.logger.debug(`Directory creation note: ${error.message}`);
         }
     }
     async createBranch(task) {
         const branchName = `harness/${task.id}`;
-        // 先检查 git 状态，排除日志文件
+        // 先Check git status，排除logfile
         const status = await this.git.status();
         const filesToAdd = status.files
             .filter(f => !f.path.startsWith('logs/') && !f.path.endsWith('.log'))
             .map(f => f.path);
         if (filesToAdd.length === 0) {
-            this.logger.info('ℹ️ 没有代码变更需要提交');
+            this.logger.info('ℹ️ 没有代码changeneedCommit');
             return branchName;
         }
-        // 检查分支是否已存在，如果存在则切换到该分支
+        // CheckBranch是否已存在，如果存在则切换到该Branch
         try {
             const { stdout: branchList } = await this.runCommand(`git branch --list ${branchName}`);
             if (branchList && branchList.trim().includes(branchName)) {
-                this.logger.info(`🔀 分支 ${branchName} 已存在，切换到该分支`);
+                this.logger.info(`🔀 Branch ${branchName} 已存在，切换到该Branch`);
                 await this.runCommand(`git checkout ${branchName}`);
             }
             else {
@@ -463,27 +468,27 @@ class TaskExecutor {
             }
         }
         catch (error) {
-            // 如果检查失败，尝试直接创建（可能会失败，但会抛出更清晰的错误）
+            // 如果CheckFailed，Attempt直接Create（可能会Failed，但会抛出更清晰的Error）
             await this.git.checkoutLocalBranch(branchName);
         }
-        // 只添加非日志文件
+        // 只add非logfile
         for (const file of filesToAdd) {
             try {
                 await this.git.add(file);
             }
             catch (e) {
-                this.logger.warn(`⚠️ 无法添加文件 ${file}: ${e}`);
+                this.logger.warn(`⚠️ 无法addfile ${file}: ${e}`);
             }
         }
-        // 检查是否有 staged 文件（通过 raw 命令）
+        // Check是否有 staged file（通过 raw 命令）
         const { stdout: stagedFiles } = await this.runCommand('git diff --cached --name-only');
         if (!stagedFiles || stagedFiles.trim().length === 0) {
-            this.logger.info('ℹ️ 没有代码变更需要提交（仅日志文件变更）');
+            this.logger.info('ℹ️ 没有代码changeneedCommit（仅logfilechange）');
             return branchName;
         }
         await this.git.commit(`[Auto] ${task.title}\n\nTask: ${task.id}`);
         await this.git.push('origin', branchName);
-        this.logger.info(`🔀 创建分支: ${branchName} (${filesToAdd.length} 个文件)`);
+        this.logger.info(`🔀 CreateBranch: ${branchName} (${filesToAdd.length} 个file)`);
         return branchName;
     }
     async callLLM(prompt, retries = 2) {
@@ -525,7 +530,7 @@ class TaskExecutor {
                         }
                         const data = await response.json();
                         this.logger.info('Kimi Coding response received');
-                        // 解析 Anthropic 格式的响应
+                        // 解析 Anthropic format的响应
                         if (data.content && data.content.length > 0) {
                             const textContent = data.content.find((c) => c.type === 'text');
                             return textContent?.text || '';
@@ -540,9 +545,9 @@ class TaskExecutor {
                 // OpenAI 使用 SDK
                 if (this.config.provider === 'openai' && this.openai) {
                     this.logger.info(`Sending OpenAI request (timeout: ${timeout}ms)...`);
-                    // 创建超时 Promise
+                    // CreateTimeout Promise
                     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error(`LLM call timeout after ${timeout}ms`)), timeout));
-                    // 创建 API 调用 Promise
+                    // Create API 调用 Promise
                     const apiPromise = this.openai.chat.completions.create({
                         model: this.config.model,
                         messages: [
@@ -558,7 +563,7 @@ class TaskExecutor {
                     this.logger.info('OpenAI response received');
                     return response.choices[0]?.message?.content || '';
                 }
-                // Kimi 使用 OpenAI 兼容接口（fetch）
+                // Kimi 使用 OpenAI compatinterface（fetch）
                 if (this.config.provider === 'kimi') {
                     this.logger.info(`Sending Kimi request via fetch...`);
                     const controller = new AbortController();
@@ -717,7 +722,7 @@ The oldString must exist exactly in the current content.
         }
     }
     extractPlanFromText(text) {
-        // 从文本中提取计划
+        // slave文本medium提取plan
         const steps = [];
         const lines = text.split('\n');
         for (const line of lines) {
@@ -731,8 +736,8 @@ The oldString must exist exactly in the current content.
         return { steps };
     }
     async generateSummary(task, results) {
-        // 直接返回简单摘要，避免额外的 LLM 调用
-        return `完成 "${task.title}"，成功执行 ${results.length} 个步骤。`;
+        // 直接返回简单summary，避免额外的 LLM 调用
+        return `complete "${task.title}"，Success执line ${results.length} steps。`;
     }
     async generateCode(description, context) {
         const prompt = `
@@ -761,7 +766,7 @@ Example:
         // If no code block found, return the response as-is
         return response.trim();
     }
-    // 文件操作
+    // file操作
     async readFile(filePath) {
         const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
         const pathModule = await Promise.resolve().then(() => __importStar(require('path')));
@@ -780,13 +785,13 @@ Example:
         }
         const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
         const pathModule = await Promise.resolve().then(() => __importStar(require('path')));
-        // 构建完整路径
+        // Build完整path
         const fullPath = pathModule.join(this.workingDir, filePath);
-        // 确保目录存在
+        // 确保dir存在
         const dir = pathModule.dirname(fullPath);
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(fullPath, content, 'utf-8');
-        this.logger.info(`✏️  写入文件: ${filePath}`);
+        this.logger.info(`✏️  Writing file: ${filePath}`);
     }
     async editFile(path, oldString, newString) {
         if (process.env.DRY_RUN === 'true') {
@@ -802,7 +807,7 @@ Example:
         }
         const newContent = content.replace(oldString, newString);
         await fs.writeFile(fullPath, newContent, 'utf-8');
-        this.logger.info(`✏️  编辑文件: ${path}`);
+        this.logger.info(`✏️  Editing file: ${path}`);
     }
     async runCommand(command, cwd) {
         if (process.env.DRY_RUN === 'true') {
@@ -844,7 +849,7 @@ Example:
         return matches;
     }
     async findRelevantCode(task) {
-        // 搜索与任务相关的代码
+        // Search与任务相close的代码
         const keywords = task.title.split(' ').concat(task.description.split(' '));
         const results = [];
         for (const keyword of keywords) {
@@ -856,7 +861,7 @@ Example:
         return JSON.stringify(results.slice(0, 10));
     }
     async runTests() {
-        this.logger.info('🧪 运行测试...');
+        this.logger.info('🧪 Running tests...');
         const result = await this.runCommand('npm test');
         return {
             success: result.exitCode === 0,
@@ -865,7 +870,7 @@ Example:
         };
     }
     async runLinter() {
-        this.logger.info('🔍 运行 linter...');
+        this.logger.info('🔍 Run linter...');
         const result = await this.runCommand('npm run lint');
         return {
             success: result.exitCode === 0,
@@ -874,16 +879,16 @@ Example:
         };
     }
     async checkArchitecture() {
-        this.logger.info('🏗️  检查架构约束...');
-        // 实现架构检查逻辑
+        this.logger.info('🏗️  Checking architectureconstraint...');
+        // implArchCheck逻辑
         return { success: true };
     }
     canAutoFix(testResult, lintResult) {
-        // 判断是否可自动修复
+        // 判断是否可自动fix
         return !testResult.success || !lintResult.success;
     }
     shouldRetry(error) {
-        // 判断是否应重试
+        // 判断是否应Retry
         const retryableErrors = [
             'timeout',
             'rate_limit',

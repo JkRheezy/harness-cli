@@ -2,7 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrowserAgent = void 0;
 const Logger_1 = require("../utils/Logger");
-const playwright_1 = require("playwright");
+let chromium, firefox, webkit;
+try {
+    const pw = require('playwright');
+    chromium = pw.chromium;
+    firefox = pw.firefox;
+    webkit = pw.webkit;
+}
+catch (e) {
+    // Playwright not available
+}
 class BrowserAgent {
     constructor() {
         this.browser = null;
@@ -13,7 +22,7 @@ class BrowserAgent {
     }
     async initialize(browserType = 'chromium') {
         this.logger.info(`🌐 Initializing ${browserType} browser...`);
-        const browserLauncher = { chromium: playwright_1.chromium, firefox: playwright_1.firefox, webkit: playwright_1.webkit }[browserType];
+        const browserLauncher = { chromium, firefox, webkit }[browserType];
         this.browser = await browserLauncher.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
