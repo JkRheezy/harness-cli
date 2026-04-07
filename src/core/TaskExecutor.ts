@@ -79,7 +79,8 @@ export class TaskExecutor {
     try {
       fn();
     } catch (error) {
-      // Telemetry failures should not affect execution
+      // Telemetry failures should not affect execution but should be debuggable
+      this.logger?.debug('Telemetry error:', error);
     }
   }
 
@@ -214,6 +215,7 @@ export class TaskExecutor {
   private async generatePlan(task: any, context: any): Promise<any> {
     const span = this.telemetry.startSpan('task.plan.generation');
     const startTime = Date.now();
+    let spanStatus: 'ok' | 'error' = 'ok';
     
     try {
       const prompt = this.buildPlanPrompt(task, context);
@@ -247,7 +249,6 @@ export class TaskExecutor {
               this.telemetry.addSpanEvent(span, 'plan.generated', {
                 stepsCount: parsed.steps.length
               });
-              this.telemetry.endSpan(span, 'ok');
             });
             
             return parsed;
@@ -271,7 +272,6 @@ export class TaskExecutor {
               this.telemetry.addSpanEvent(span, 'plan.generated', {
                 stepsCount: parsed.steps.length
               });
-              this.telemetry.endSpan(span, 'ok');
             });
             
             return parsed;
@@ -293,7 +293,6 @@ export class TaskExecutor {
             this.telemetry.addSpanEvent(span, 'plan.generated', {
               stepsCount: parsed.steps.length
             });
-            this.telemetry.endSpan(span, 'ok');
           });
           
           return parsed;
@@ -317,21 +316,25 @@ export class TaskExecutor {
           this.telemetry.addSpanEvent(span, 'plan.extracted', {
             stepsCount: extracted.steps?.length || 0
           });
-          this.telemetry.endSpan(span, 'ok');
         });
         
         return extracted;
       }
     } catch (error: any) {
       this.logger.error(`❌ Failed to generate plan: ${error.message}`);
+      spanStatus = 'error';
       
       this.safeTelemetry(() => {
         this.telemetry.counter('task.plan.generation.failure', 1);
-        this.telemetry.endSpan(span, 'error');
       });
       
       // Return empty plan instead of crashing
       return { steps: [], error: error.message };
+    } finally {
+      // Ensure span is always ended
+      this.safeTelemetry(() => {
+        this.telemetry.endSpan(span, spanStatus);
+      });
     }
   }
 
@@ -628,199 +631,141 @@ export class TaskExecutor {
 
   private estimateTokens(text: string): number {
     // Rough estimation: ~4 characters per token
+    // NOTE: This is an approximation. Actual token counts depend on the tokenizer
+    // used by the specific LLM provider and may vary significantly for
+    // non-English text or special characters.
     return Math.ceil(text.length / 4);
   }
 
   private async callLLM(prompt: string, retries = 2): Promise<string> {
     const callStart = Date.now();
     const span = this.llmMetrics.startLLMSpan(this.config.provider, this.config.model);
+    let spanStatus: 'ok' | 'error' = 'ok';
     
-    let lastError: Error | null = null;
-    const timeout = this.config.timeout || 60000;
-    
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        if (attempt > 0) {
-          this.logger.info(`Retry attempt ${attempt}/${retries}...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-        
-        this.logger.info(`Calling LLM: ${this.config.provider}/${this.config.model}...`);
-        
-        // Anthropic / Kimi Coding 使用 fetch 直接调用
-        if (this.config.provider === 'anthropic') {
-          this.logger.info(`Sending Kimi Coding request via fetch...`);
+    try {
+      let lastError: Error | null = null;
+      const timeout = this.config.timeout || 60000;
+      
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          if (attempt > 0) {
+            this.logger.info(`Retry attempt ${attempt}/${retries}...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
           
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          this.logger.info(`Calling LLM: ${this.config.provider}/${this.config.model}...`);
           
-          try {
-            const response = await fetch(`${this.config.baseUrl}/v1/messages`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': this.config.apiKey,
-                'anthropic-version': '2023-06-01'
-              },
-              body: JSON.stringify({
-                model: this.config.model,
-                max_tokens: this.config.maxTokens,
-                temperature: this.config.temperature,
-                messages: [
-                  { role: 'user', content: this.getSystemPrompt() + '\n\n' + prompt }
-                ]
-              }),
-              signal: controller.signal
-            });
+          // Anthropic / Kimi Coding 使用 fetch 直接调用
+          if (this.config.provider === 'anthropic') {
+            this.logger.info(`Sending Kimi Coding request via fetch...`);
             
-            clearTimeout(timeoutId);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
             
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const data = await response.json();
-            this.logger.info('Kimi Coding response received');
-            
-            // 解析 Anthropic format的响应
-            if (data.content && data.content.length > 0) {
-              const textContent = data.content.find((c: any) => c.type === 'text');
-              const result = textContent?.text || '';
+            try {
+              const response = await fetch(`${this.config.baseUrl}/v1/messages`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': this.config.apiKey,
+                  'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                  model: this.config.model,
+                  max_tokens: this.config.maxTokens,
+                  temperature: this.config.temperature,
+                  messages: [
+                    { role: 'user', content: this.getSystemPrompt() + '\n\n' + prompt }
+                  ]
+                }),
+                signal: controller.signal
+              });
               
-              // Record success metrics
+              clearTimeout(timeoutId);
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+              }
+              
+              const data = await response.json();
+              this.logger.info('Kimi Coding response received');
+              
+              // 解析 Anthropic format的响应
+              if (data.content && data.content.length > 0) {
+                const textContent = data.content.find((c: any) => c.type === 'text');
+                const result = textContent?.text || '';
+                
+                // Record success metrics
+                const duration = Date.now() - callStart;
+                this.safeTelemetry(() => {
+                  this.llmMetrics.recordCall({
+                    provider: this.config.provider,
+                    model: this.config.model,
+                    promptTokens: this.estimateTokens(prompt),
+                    completionTokens: this.estimateTokens(result),
+                    totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+                    durationMs: duration,
+                    success: true
+                  });
+                  
+                  this.telemetry.addSpanEvent(span, 'llm.response.received', {
+                    duration,
+                    responseLength: result.length
+                  });
+                });
+                
+                return result;
+              }
+              
+              // Record success metrics for empty response
               const duration = Date.now() - callStart;
               this.safeTelemetry(() => {
                 this.llmMetrics.recordCall({
                   provider: this.config.provider,
                   model: this.config.model,
                   promptTokens: this.estimateTokens(prompt),
-                  completionTokens: this.estimateTokens(result),
-                  totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+                  completionTokens: 0,
+                  totalTokens: this.estimateTokens(prompt),
                   durationMs: duration,
                   success: true
                 });
-                
-                this.telemetry.addSpanEvent(span, 'llm.response.received', {
-                  duration,
-                  responseLength: result.length
-                });
-                this.telemetry.endSpan(span, 'ok');
               });
               
-              return result;
+              return '';
+              
+            } catch (error: any) {
+              clearTimeout(timeoutId);
+              throw error;
             }
-            
-            // Record success metrics for empty response
-            const duration = Date.now() - callStart;
-            this.safeTelemetry(() => {
-              this.llmMetrics.recordCall({
-                provider: this.config.provider,
-                model: this.config.model,
-                promptTokens: this.estimateTokens(prompt),
-                completionTokens: 0,
-                totalTokens: this.estimateTokens(prompt),
-                durationMs: duration,
-                success: true
-              });
-              this.telemetry.endSpan(span, 'ok');
-            });
-            
-            return '';
-            
-          } catch (error: any) {
-            clearTimeout(timeoutId);
-            throw error;
           }
-        }
-        
-        // OpenAI 使用 SDK
-        if (this.config.provider === 'openai' && this.openai) {
-          this.logger.info(`Sending OpenAI request (timeout: ${timeout}ms)...`);
           
-          // CreateTimeout Promise
-          const timeoutPromise = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error(`LLM call timeout after ${timeout}ms`)), timeout)
-          );
-          
-          // Create API 调用 Promise
-          const apiPromise = this.openai.chat.completions.create({
-            model: this.config.model,
-            messages: [
-              { role: 'system', content: this.getSystemPrompt() },
-              ...this.context,
-              { role: 'user', content: prompt }
-            ],
-            max_tokens: this.config.maxTokens,
-            temperature: this.config.temperature
-          });
-          
-          this.logger.info('Waiting for OpenAI response...');
-          const response = await Promise.race([apiPromise, timeoutPromise]);
-          
-          this.logger.info('OpenAI response received');
-          const result = response.choices[0]?.message?.content || '';
-          
-          // Record success metrics
-          const duration = Date.now() - callStart;
-          this.safeTelemetry(() => {
-            this.llmMetrics.recordCall({
-              provider: this.config.provider,
+          // OpenAI 使用 SDK
+          if (this.config.provider === 'openai' && this.openai) {
+            this.logger.info(`Sending OpenAI request (timeout: ${timeout}ms)...`);
+            
+            // CreateTimeout Promise
+            const timeoutPromise = new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error(`LLM call timeout after ${timeout}ms`)), timeout)
+            );
+            
+            // Create API 调用 Promise
+            const apiPromise = this.openai.chat.completions.create({
               model: this.config.model,
-              promptTokens: this.estimateTokens(prompt),
-              completionTokens: this.estimateTokens(result),
-              totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
-              durationMs: duration,
-              success: true
+              messages: [
+                { role: 'system', content: this.getSystemPrompt() },
+                ...this.context,
+                { role: 'user', content: prompt }
+              ],
+              max_tokens: this.config.maxTokens,
+              temperature: this.config.temperature
             });
             
-            this.telemetry.addSpanEvent(span, 'llm.response.received', {
-              duration,
-              responseLength: result.length
-            });
-            this.telemetry.endSpan(span, 'ok');
-          });
-          
-          return result;
-        }
-        
-        // Kimi 使用 OpenAI compatinterface（fetch）
-        if (this.config.provider === 'kimi') {
-          this.logger.info(`Sending Kimi request via fetch...`);
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
-          
-          try {
-            const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.config.apiKey}`
-              },
-              body: JSON.stringify({
-                model: this.config.model,
-                messages: [
-                  { role: 'system', content: this.getSystemPrompt() },
-                  ...this.context,
-                  { role: 'user', content: prompt }
-                ],
-                max_tokens: this.config.maxTokens,
-                temperature: this.config.temperature
-              }),
-              signal: controller.signal
-            });
+            this.logger.info('Waiting for OpenAI response...');
+            const response = await Promise.race([apiPromise, timeoutPromise]);
             
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const data = await response.json();
-            this.logger.info('Kimi response received');
-            const result = data.choices[0]?.message?.content || '';
+            this.logger.info('OpenAI response received');
+            const result = response.choices[0]?.message?.content || '';
             
             // Record success metrics
             const duration = Date.now() - callStart;
@@ -839,50 +784,115 @@ export class TaskExecutor {
                 duration,
                 responseLength: result.length
               });
-              this.telemetry.endSpan(span, 'ok');
             });
             
             return result;
+          }
+          
+          // Kimi 使用 OpenAI compatinterface（fetch）
+          if (this.config.provider === 'kimi') {
+            this.logger.info(`Sending Kimi request via fetch...`);
             
-          } catch (error: any) {
-            clearTimeout(timeoutId);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+              const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${this.config.apiKey}`
+                },
+                body: JSON.stringify({
+                  model: this.config.model,
+                  messages: [
+                    { role: 'system', content: this.getSystemPrompt() },
+                    ...this.context,
+                    { role: 'user', content: prompt }
+                  ],
+                  max_tokens: this.config.maxTokens,
+                  temperature: this.config.temperature
+                }),
+                signal: controller.signal
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+              }
+              
+              const data = await response.json();
+              this.logger.info('Kimi response received');
+              const result = data.choices[0]?.message?.content || '';
+              
+              // Record success metrics
+              const duration = Date.now() - callStart;
+              this.safeTelemetry(() => {
+                this.llmMetrics.recordCall({
+                  provider: this.config.provider,
+                  model: this.config.model,
+                  promptTokens: this.estimateTokens(prompt),
+                  completionTokens: this.estimateTokens(result),
+                  totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+                  durationMs: duration,
+                  success: true
+                });
+                
+                this.telemetry.addSpanEvent(span, 'llm.response.received', {
+                  duration,
+                  responseLength: result.length
+                });
+              });
+              
+              return result;
+              
+            } catch (error: any) {
+              clearTimeout(timeoutId);
+              throw error;
+            }
+          }
+          
+          throw new Error(`Unsupported provider: ${this.config.provider}`);
+          
+        } catch (error: any) {
+          lastError = error;
+          this.logger.warn(`LLM call failed (attempt ${attempt + 1}): ${error.message}`);
+          
+          if (attempt === retries) {
+            // Record failure metrics
+            this.safeTelemetry(() => {
+              this.llmMetrics.recordCall({
+                provider: this.config.provider,
+                model: this.config.model,
+                promptTokens: this.estimateTokens(prompt),
+                completionTokens: 0,
+                totalTokens: this.estimateTokens(prompt),
+                durationMs: Date.now() - callStart,
+                success: false,
+                errorType: error.name
+              });
+              
+              this.telemetry.addSpanEvent(span, 'llm.error', {
+                error: error.message,
+                attempt
+              });
+            });
+            
+            spanStatus = 'error';
             throw error;
           }
         }
-        
-        throw new Error(`Unsupported provider: ${this.config.provider}`);
-        
-      } catch (error: any) {
-        lastError = error;
-        this.logger.warn(`LLM call failed (attempt ${attempt + 1}): ${error.message}`);
-        
-        if (attempt === retries) {
-          // Record failure metrics
-          this.safeTelemetry(() => {
-            this.llmMetrics.recordCall({
-              provider: this.config.provider,
-              model: this.config.model,
-              promptTokens: this.estimateTokens(prompt),
-              completionTokens: 0,
-              totalTokens: this.estimateTokens(prompt),
-              durationMs: Date.now() - callStart,
-              success: false,
-              errorType: error.name
-            });
-            
-            this.telemetry.addSpanEvent(span, 'llm.error', {
-              error: error.message,
-              attempt
-            });
-            this.telemetry.endSpan(span, 'error');
-          });
-          
-          throw error;
-        }
       }
+      
+      throw lastError || new Error('LLM call failed after all retries');
+    } finally {
+      // Ensure span is always ended
+      this.safeTelemetry(() => {
+        this.telemetry.endSpan(span, spanStatus);
+      });
     }
-    
-    throw lastError || new Error('LLM call failed after all retries');
   }
 
   private getSystemPrompt(): string {
