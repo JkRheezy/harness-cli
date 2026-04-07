@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import * as path from 'path';
 import { Command } from 'commander';
 import { LoopController } from './core/LoopController';
 import { TaskSubmitter, Task } from './core/TaskSubmitter';
@@ -8,6 +9,7 @@ import { ReviewAgent } from './core/ReviewAgent';
 import { ConfigLoader } from './utils/ConfigLoader';
 import { Logger } from './utils/Logger';
 import visualizeCommand from './commands/visualize';
+import { TelemetryDashboard } from './telemetry/dashboard/TelemetryDashboard';
 
 const program = new Command();
 const logger = new Logger();
@@ -304,5 +306,30 @@ function formatDuration(ms: number): string {
 
 // ========== 可视化命令 ==========
 program.addCommand(visualizeCommand);
+
+// ========== Telemetry Dashboard 命令 ==========
+program
+  .command('telemetry')
+  .description('View telemetry dashboard')
+  .option('-w, --watch', 'Watch mode with auto-refresh', false)
+  .option('-d, --dir <dir>', 'Telemetry directory', '.harness/telemetry')
+  .action(async (options) => {
+    try {
+      const dashboard = new TelemetryDashboard({
+        telemetryDir: path.resolve(options.dir),
+        refreshIntervalMs: 5000
+      });
+      
+      if (options.watch) {
+        await dashboard.watch();
+      } else {
+        const report = await dashboard.generateReport();
+        console.log(report);
+      }
+    } catch (error) {
+      console.error('Error displaying telemetry:', error);
+      process.exit(1);
+    }
+  });
 
 program.parse();
