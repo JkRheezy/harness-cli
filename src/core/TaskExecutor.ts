@@ -6,6 +6,8 @@ import { ToolRegistry } from '../tools/ToolRegistry';
 import { BrowserValidator } from '../browser/BrowserValidator';
 import { BrowserValidationResult } from '../browser/types';
 import { DevServerManager } from '../utils/DevServerManager';
+import { TelemetryProvider, FileAdapter } from '../telemetry';
+import { LLMMetricsCollector } from '../telemetry/collectors';
 
 export interface LLMConfig {
   provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -33,14 +35,29 @@ export class TaskExecutor {
   private workingDir: string;
   private devServerManager: DevServerManager;
   private devServerUrl: string | null = null;
+  private telemetry: TelemetryProvider;
+  private llmMetrics: LLMMetricsCollector;
 
-  constructor(config: LLMConfig, workingDir: string = process.cwd()) {
+  constructor(
+    config: LLMConfig, 
+    workingDir: string = process.cwd(), 
+    telemetry?: TelemetryProvider
+  ) {
     this.config = config;
     this.workingDir = workingDir;
     this.logger = new Logger();
     this.git = simpleGit(workingDir);
     this.toolRegistry = new ToolRegistry();
     this.devServerManager = new DevServerManager();
+    
+    // Initialize telemetry (use provided or create new)
+    this.telemetry = telemetry || new FileAdapter({
+      outputDir: require('path').join(workingDir, '.harness', 'telemetry'),
+      maxFileSizeMB: 10,
+      retentionDays: 7
+    });
+    
+    this.llmMetrics = new LLMMetricsCollector(this.telemetry);
     
     // Init LLM 客户端
     if (config.provider === 'openai' || config.provider === 'kimi') {
@@ -55,6 +72,14 @@ export class TaskExecutor {
         apiKey: config.apiKey,
         baseURL: config.baseUrl
       });
+    }
+  }
+
+  private safeTelemetry(fn: () => void): void {
+    try {
+      fn();
+    } catch (error) {
+      // Telemetry failures should not affect execution
     }
   }
 
@@ -187,11 +212,14 @@ export class TaskExecutor {
   }
 
   private async generatePlan(task: any, context: any): Promise<any> {
-    const prompt = this.buildPlanPrompt(task, context);
-    
-    this.logger.info('Calling LLM to generate plan...');
+    const span = this.telemetry.startSpan('task.plan.generation');
+    const startTime = Date.now();
     
     try {
+      const prompt = this.buildPlanPrompt(task, context);
+      
+      this.logger.info('Calling LLM to generate plan...');
+      
       const response = await this.callLLM(prompt);
       
       // Log full response for debugging
@@ -209,6 +237,19 @@ export class TaskExecutor {
           const parsed = JSON.parse(jsonMatch[1].trim());
           if (parsed.steps && Array.isArray(parsed.steps)) {
             this.logger.info(`✅ Parsed plan with ${parsed.steps.length} steps from code block`);
+            
+            this.safeTelemetry(() => {
+              this.telemetry.timer('task.plan.generation.duration', Date.now() - startTime, {
+                taskType: task.type,
+                stepsCount: parsed.steps.length
+              });
+              
+              this.telemetry.addSpanEvent(span, 'plan.generated', {
+                stepsCount: parsed.steps.length
+              });
+              this.telemetry.endSpan(span, 'ok');
+            });
+            
             return parsed;
           }
         }
@@ -220,6 +261,19 @@ export class TaskExecutor {
           const parsed = JSON.parse(jsonObjectMatch[1].trim());
           if (parsed.steps && Array.isArray(parsed.steps)) {
             this.logger.info(`✅ Parsed plan with ${parsed.steps.length} steps from object`);
+            
+            this.safeTelemetry(() => {
+              this.telemetry.timer('task.plan.generation.duration', Date.now() - startTime, {
+                taskType: task.type,
+                stepsCount: parsed.steps.length
+              });
+              
+              this.telemetry.addSpanEvent(span, 'plan.generated', {
+                stepsCount: parsed.steps.length
+              });
+              this.telemetry.endSpan(span, 'ok');
+            });
+            
             return parsed;
           }
         }
@@ -229,6 +283,19 @@ export class TaskExecutor {
         const parsed = JSON.parse(response.trim());
         if (parsed.steps && Array.isArray(parsed.steps)) {
           this.logger.info(`✅ Parsed plan with ${parsed.steps.length} steps`);
+          
+          this.safeTelemetry(() => {
+            this.telemetry.timer('task.plan.generation.duration', Date.now() - startTime, {
+              taskType: task.type,
+              stepsCount: parsed.steps.length
+            });
+            
+            this.telemetry.addSpanEvent(span, 'plan.generated', {
+              stepsCount: parsed.steps.length
+            });
+            this.telemetry.endSpan(span, 'ok');
+          });
+          
           return parsed;
         }
         
@@ -239,10 +306,30 @@ export class TaskExecutor {
         this.logger.error(`Response was: ${response.substring(0, 500)}...`);
         const extracted = this.extractPlanFromText(response);
         this.logger.info(`Extracted ${extracted.steps?.length || 0} steps from text`);
+        
+        this.safeTelemetry(() => {
+          this.telemetry.timer('task.plan.generation.duration', Date.now() - startTime, {
+            taskType: task.type,
+            stepsCount: extracted.steps?.length || 0,
+            fallback: true
+          });
+          
+          this.telemetry.addSpanEvent(span, 'plan.extracted', {
+            stepsCount: extracted.steps?.length || 0
+          });
+          this.telemetry.endSpan(span, 'ok');
+        });
+        
         return extracted;
       }
     } catch (error: any) {
       this.logger.error(`❌ Failed to generate plan: ${error.message}`);
+      
+      this.safeTelemetry(() => {
+        this.telemetry.counter('task.plan.generation.failure', 1);
+        this.telemetry.endSpan(span, 'error');
+      });
+      
       // Return empty plan instead of crashing
       return { steps: [], error: error.message };
     }
@@ -539,9 +626,16 @@ export class TaskExecutor {
     return branchName;
   }
 
+  private estimateTokens(text: string): number {
+    // Rough estimation: ~4 characters per token
+    return Math.ceil(text.length / 4);
+  }
+
   private async callLLM(prompt: string, retries = 2): Promise<string> {
-    this.logger.info(`Calling LLM: ${this.config.provider}/${this.config.model}...`);
+    const callStart = Date.now();
+    const span = this.llmMetrics.startLLMSpan(this.config.provider, this.config.model);
     
+    let lastError: Error | null = null;
     const timeout = this.config.timeout || 60000;
     
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -550,6 +644,8 @@ export class TaskExecutor {
           this.logger.info(`Retry attempt ${attempt}/${retries}...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
+        
+        this.logger.info(`Calling LLM: ${this.config.provider}/${this.config.model}...`);
         
         // Anthropic / Kimi Coding 使用 fetch 直接调用
         if (this.config.provider === 'anthropic') {
@@ -590,8 +686,46 @@ export class TaskExecutor {
             // 解析 Anthropic format的响应
             if (data.content && data.content.length > 0) {
               const textContent = data.content.find((c: any) => c.type === 'text');
-              return textContent?.text || '';
+              const result = textContent?.text || '';
+              
+              // Record success metrics
+              const duration = Date.now() - callStart;
+              this.safeTelemetry(() => {
+                this.llmMetrics.recordCall({
+                  provider: this.config.provider,
+                  model: this.config.model,
+                  promptTokens: this.estimateTokens(prompt),
+                  completionTokens: this.estimateTokens(result),
+                  totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+                  durationMs: duration,
+                  success: true
+                });
+                
+                this.telemetry.addSpanEvent(span, 'llm.response.received', {
+                  duration,
+                  responseLength: result.length
+                });
+                this.telemetry.endSpan(span, 'ok');
+              });
+              
+              return result;
             }
+            
+            // Record success metrics for empty response
+            const duration = Date.now() - callStart;
+            this.safeTelemetry(() => {
+              this.llmMetrics.recordCall({
+                provider: this.config.provider,
+                model: this.config.model,
+                promptTokens: this.estimateTokens(prompt),
+                completionTokens: 0,
+                totalTokens: this.estimateTokens(prompt),
+                durationMs: duration,
+                success: true
+              });
+              this.telemetry.endSpan(span, 'ok');
+            });
+            
             return '';
             
           } catch (error: any) {
@@ -625,7 +759,29 @@ export class TaskExecutor {
           const response = await Promise.race([apiPromise, timeoutPromise]);
           
           this.logger.info('OpenAI response received');
-          return response.choices[0]?.message?.content || '';
+          const result = response.choices[0]?.message?.content || '';
+          
+          // Record success metrics
+          const duration = Date.now() - callStart;
+          this.safeTelemetry(() => {
+            this.llmMetrics.recordCall({
+              provider: this.config.provider,
+              model: this.config.model,
+              promptTokens: this.estimateTokens(prompt),
+              completionTokens: this.estimateTokens(result),
+              totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+              durationMs: duration,
+              success: true
+            });
+            
+            this.telemetry.addSpanEvent(span, 'llm.response.received', {
+              duration,
+              responseLength: result.length
+            });
+            this.telemetry.endSpan(span, 'ok');
+          });
+          
+          return result;
         }
         
         // Kimi 使用 OpenAI compatinterface（fetch）
@@ -664,7 +820,29 @@ export class TaskExecutor {
             
             const data = await response.json();
             this.logger.info('Kimi response received');
-            return data.choices[0]?.message?.content || '';
+            const result = data.choices[0]?.message?.content || '';
+            
+            // Record success metrics
+            const duration = Date.now() - callStart;
+            this.safeTelemetry(() => {
+              this.llmMetrics.recordCall({
+                provider: this.config.provider,
+                model: this.config.model,
+                promptTokens: this.estimateTokens(prompt),
+                completionTokens: this.estimateTokens(result),
+                totalTokens: this.estimateTokens(prompt) + this.estimateTokens(result),
+                durationMs: duration,
+                success: true
+              });
+              
+              this.telemetry.addSpanEvent(span, 'llm.response.received', {
+                duration,
+                responseLength: result.length
+              });
+              this.telemetry.endSpan(span, 'ok');
+            });
+            
+            return result;
             
           } catch (error: any) {
             clearTimeout(timeoutId);
@@ -675,14 +853,36 @@ export class TaskExecutor {
         throw new Error(`Unsupported provider: ${this.config.provider}`);
         
       } catch (error: any) {
+        lastError = error;
         this.logger.warn(`LLM call failed (attempt ${attempt + 1}): ${error.message}`);
+        
         if (attempt === retries) {
+          // Record failure metrics
+          this.safeTelemetry(() => {
+            this.llmMetrics.recordCall({
+              provider: this.config.provider,
+              model: this.config.model,
+              promptTokens: this.estimateTokens(prompt),
+              completionTokens: 0,
+              totalTokens: this.estimateTokens(prompt),
+              durationMs: Date.now() - callStart,
+              success: false,
+              errorType: error.name
+            });
+            
+            this.telemetry.addSpanEvent(span, 'llm.error', {
+              error: error.message,
+              attempt
+            });
+            this.telemetry.endSpan(span, 'error');
+          });
+          
           throw error;
         }
       }
     }
     
-    throw new Error('LLM call failed after all retries');
+    throw lastError || new Error('LLM call failed after all retries');
   }
 
   private getSystemPrompt(): string {
