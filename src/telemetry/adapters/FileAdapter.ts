@@ -1,11 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { randomUUID } from 'crypto';
 import { TelemetryProvider, Metric, Span, LogEntry, Tags, SpanContext, LogLevel } from '../types';
 
 interface FileAdapterOptions {
   outputDir: string;
-  maxFileSizeMB: number;
-  retentionDays: number;
+  maxFileSizeMB?: number;
+  retentionDays?: number;
 }
 
 export class FileAdapter extends TelemetryProvider {
@@ -13,10 +14,13 @@ export class FileAdapter extends TelemetryProvider {
   private metricStream?: fs.WriteStream;
   private spanStream?: fs.WriteStream;
   private logStream?: fs.WriteStream;
-  private currentTraceId?: string;
+  private pendingWrites: number = 0;
 
-  constructor(options: { outputDir: string; maxFileSizeMB?: number; retentionDays?: number }) {
-    super({ adapter: 'file' });
+  constructor(options: FileAdapterOptions) {
+    super({ adapter: 'file' } as any);
+    if (!options.outputDir) {
+      throw new Error('outputDir is required');
+    }
     this.options = {
       outputDir: options.outputDir,
       maxFileSizeMB: options.maxFileSizeMB || 10,
@@ -35,24 +39,38 @@ export class FileAdapter extends TelemetryProvider {
   private initializeStreams(): void {
     const timestamp = new Date().toISOString().split('T')[0];
     
-    this.metricStream = fs.createWriteStream(
-      path.join(this.options.outputDir, `metrics-${timestamp}.jsonl`),
+    this.metricStream = this.createStream(`metrics-${timestamp}.jsonl`);
+    this.spanStream = this.createStream(`spans-${timestamp}.jsonl`);
+    this.logStream = this.createStream(`logs-${timestamp}.jsonl`);
+  }
+
+  private createStream(filename: string): fs.WriteStream {
+    const stream = fs.createWriteStream(
+      path.join(this.options.outputDir, filename),
       { flags: 'a' }
     );
     
-    this.spanStream = fs.createWriteStream(
-      path.join(this.options.outputDir, `spans-${timestamp}.jsonl`),
-      { flags: 'a' }
-    );
+    stream.on('error', (err) => {
+      console.error(`[Telemetry] Stream error for ${filename}:`, err.message);
+    });
     
-    this.logStream = fs.createWriteStream(
-      path.join(this.options.outputDir, `logs-${timestamp}.jsonl`),
-      { flags: 'a' }
-    );
+    return stream;
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return randomUUID();
+  }
+
+  private writeToStream(stream: fs.WriteStream | undefined, data: string): boolean {
+    if (!stream) return false;
+    this.pendingWrites++;
+    const ok = stream.write(data, (err) => {
+      this.pendingWrites--;
+      if (err) {
+        console.error('[Telemetry] Write error:', err.message);
+      }
+    });
+    return ok;
   }
 
   counter(name: string, value: number, tags?: Tags): void {
@@ -63,7 +81,7 @@ export class FileAdapter extends TelemetryProvider {
       timestamp: Date.now(),
       tags
     };
-    this.metricStream?.write(JSON.stringify(metric) + '\n');
+    this.writeToStream(this.metricStream, JSON.stringify(metric) + '\n');
   }
 
   gauge(name: string, value: number, tags?: Tags): void {
@@ -74,7 +92,7 @@ export class FileAdapter extends TelemetryProvider {
       timestamp: Date.now(),
       tags
     };
-    this.metricStream?.write(JSON.stringify(metric) + '\n');
+    this.writeToStream(this.metricStream, JSON.stringify(metric) + '\n');
   }
 
   histogram(name: string, value: number, tags?: Tags): void {
@@ -85,7 +103,7 @@ export class FileAdapter extends TelemetryProvider {
       timestamp: Date.now(),
       tags
     };
-    this.metricStream?.write(JSON.stringify(metric) + '\n');
+    this.writeToStream(this.metricStream, JSON.stringify(metric) + '\n');
   }
 
   timer(name: string, durationMs: number, tags?: Tags): void {
@@ -96,7 +114,7 @@ export class FileAdapter extends TelemetryProvider {
       timestamp: Date.now(),
       tags
     };
-    this.metricStream?.write(JSON.stringify(metric) + '\n');
+    this.writeToStream(this.metricStream, JSON.stringify(metric) + '\n');
   }
 
   startSpan(name: string, parentContext?: SpanContext): Span {
@@ -116,7 +134,7 @@ export class FileAdapter extends TelemetryProvider {
   endSpan(span: Span, status: 'ok' | 'error' = 'ok'): void {
     span.endTime = Date.now();
     span.status = status;
-    this.spanStream?.write(JSON.stringify(span) + '\n');
+    this.writeToStream(this.spanStream, JSON.stringify(span) + '\n');
   }
 
   addSpanEvent(span: Span, name: string, attributes?: Record<string, unknown>): void {
@@ -134,26 +152,37 @@ export class FileAdapter extends TelemetryProvider {
       timestamp: Date.now(),
       context
     };
-    this.logStream?.write(JSON.stringify(entry) + '\n');
+    this.writeToStream(this.logStream, JSON.stringify(entry) + '\n');
   }
 
   async flush(): Promise<void> {
+    if (this.pendingWrites === 0) return;
+    
     return new Promise((resolve) => {
-      let pending = 3;
       const check = () => {
-        pending--;
-        if (pending === 0) resolve();
+        if (this.pendingWrites === 0) {
+          resolve();
+        } else {
+          setImmediate(check);
+        }
       };
-      this.metricStream?.once('drain', check) || check();
-      this.spanStream?.once('drain', check) || check();
-      this.logStream?.once('drain', check) || check();
+      check();
     });
   }
 
   async close(): Promise<void> {
     await this.flush();
-    this.metricStream?.end();
-    this.spanStream?.end();
-    this.logStream?.end();
+    
+    return new Promise((resolve) => {
+      let closed = 0;
+      const check = () => {
+        closed++;
+        if (closed === 3) resolve();
+      };
+      
+      this.metricStream?.end(check) || check();
+      this.spanStream?.end(check) || check();
+      this.logStream?.end(check) || check();
+    });
   }
 }
