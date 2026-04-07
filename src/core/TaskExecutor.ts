@@ -9,6 +9,8 @@ import { DevServerManager } from '../utils/DevServerManager';
 import { TelemetryProvider, FileAdapter } from '../telemetry';
 import { LLMMetricsCollector } from '../telemetry/collectors';
 import { HealingOrchestrator } from '../healing';
+import { RuleFixer } from '../rules';
+import { RuleViolation } from '../rules/types';
 
 export interface LLMConfig {
   provider: 'openai' | 'anthropic' | 'kimi' | 'google' | 'local';
@@ -477,6 +479,53 @@ export class TaskExecutor {
         lintResult = await this.runLinter();
       } else {
         this.logger.warn(`Healing failed: ${healingResult.escalationReason}`);
+      }
+    }
+    
+    // Phase 2: Code-level auto-fix (RuleFixer)
+    if (!lintResult.success && lintResult.output) {
+      this.logger.info('Linter still has violations, attempting code auto-fix...');
+      
+      // Parse lint output for violations
+      const violations = this.parseLintOutput(lintResult.output);
+      const fixableViolations = violations.filter(v => v.autoFixable);
+      
+      if (fixableViolations.length > 0) {
+        this.logger.info(`Found ${fixableViolations.length} auto-fixable violations`);
+        
+        const ruleFixer = new RuleFixer({ dryRun: false });
+        const affectedFiles = [...new Set(fixableViolations.map(v => v.filePath))];
+        
+        let totalFixed = 0;
+        for (const filePath of affectedFiles) {
+          const fullPath = require('path').join(this.workingDir, filePath);
+          
+          if (!require('fs').existsSync(fullPath)) {
+            this.logger.warn(`File not found: ${filePath}`);
+            continue;
+          }
+          
+          const content = require('fs').readFileSync(fullPath, 'utf8');
+          const fileViolations = fixableViolations.filter(v => v.filePath === filePath);
+          
+          try {
+            const fixResult = await ruleFixer.fixFile(content, fileViolations);
+            
+            if (fixResult.success || fixResult.partial) {
+              require('fs').writeFileSync(fullPath, fixResult.fixedCode!);
+              totalFixed += fixResult.appliedFixes.length;
+              this.logger.info(`Fixed ${fixResult.appliedFixes.length} issues in ${filePath}`);
+            }
+          } catch (error: any) {
+            this.logger.error(`Failed to fix ${filePath}:`, error.message);
+          }
+        }
+        
+        // Retry lint after fixes
+        if (totalFixed > 0) {
+          this.logger.info('Code fixes applied, retrying linter...');
+          lintResult = await this.runLinter();
+        }
       }
     }
     
@@ -1262,6 +1311,49 @@ Example:
       output: result.stdout,
       errors: result.stderr
     };
+  }
+
+  /**
+   * Parse ESLint JSON output into RuleViolations
+   */
+  private parseLintOutput(stdout: string): RuleViolation[] {
+    const violations: RuleViolation[] = [];
+    
+    try {
+      // Find JSON array in output
+      const jsonMatch = stdout.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        return violations;
+      }
+      
+      const results = JSON.parse(jsonMatch[0]);
+      
+      for (const fileResult of results) {
+        const filePath = fileResult.filePath;
+        
+        for (const message of fileResult.messages || []) {
+          if (!message.fix) continue;
+          
+          violations.push({
+            ruleId: message.ruleId || 'unknown',
+            ruleName: message.ruleId || 'unknown',
+            severity: message.severity === 2 ? 'error' : 'warning',
+            filePath: filePath,
+            line: message.line,
+            column: message.column,
+            message: message.message,
+            autoFixable: true,
+            fix: {
+              replacement: message.fix.text
+            }
+          });
+        }
+      }
+    } catch (error: any) {
+      this.logger.error('Failed to parse lint output:', error.message);
+    }
+    
+    return violations;
   }
 
   private async checkArchitecture(): Promise<any> {
