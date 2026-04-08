@@ -252,10 +252,12 @@ program
 // ========== 快速创建项目命令 ==========
 program
   .command('create <project-name>')
-  .description('快速创建新项目')
+  .description('智能创建新项目')
   .option('-t, --template <name>', '指定模板', 'node-ts')
   .option('-f, --force', '强制覆盖')
   .option('--skip-install', '跳过依赖安装')
+  .option('--skip-analysis', '跳过智能业务分析')
+  .option('--auto-start', '创建完成后立即启动自动化开发')
   .action(async (projectName: string, options: any) => {
     try {
       const { InitCommand } = await import('./commands/InitCommand');
@@ -264,10 +266,12 @@ program
         template: options.template,
         projectName: projectName,
         force: options.force,
-        skipInstall: options.skipInstall
+        skipInstall: options.skipInstall,
+        skipAnalysis: options.skipAnalysis,
+        autoStart: options.autoStart
       });
     } catch (error) {
-      logger.error('创建失败:', error);
+      logger.error('项目创建失败:', error);
       process.exit(1);
     }
   });

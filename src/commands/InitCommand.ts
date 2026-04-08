@@ -214,7 +214,47 @@ export class InitCommand {
         }
       }
 
-      // 7. 安装依赖（可选）
+      // 7. 询问是否立即启动自动化开发
+      if (!options.autoStart && isInteractive && businessAnalysis) {
+        const { startLoop } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'startLoop',
+            message: '是否立即启动自动化开发 (harness loop)?',
+            default: true
+          }
+        ]);
+
+        if (startLoop) {
+          console.log('\n🚀 正在启动自动化开发...\n');
+          const { LoopController } = await import('../core/LoopController');
+          const { ConfigLoader } = await import('../utils/ConfigLoader');
+          
+          const config = await ConfigLoader.load(path.join(targetDir, '.harness/config.yaml'));
+          const controller = new LoopController(config);
+          
+          // 在新目录中启动 loop
+          process.chdir(targetDir);
+          await controller.start({ maxDuration: 6 * 60 * 60 * 1000 });
+          return; // 不显示后续步骤
+        }
+      }
+
+      // 如果指定了 --auto-start 参数
+      if (options.autoStart && businessAnalysis) {
+        console.log('\n🚀 正在启动自动化开发...\n');
+        const { LoopController } = await import('../core/LoopController');
+        const { ConfigLoader } = await import('../utils/ConfigLoader');
+        
+        const config = await ConfigLoader.load(path.join(targetDir, '.harness/config.yaml'));
+        const controller = new LoopController(config);
+        
+        process.chdir(targetDir);
+        await controller.start({ maxDuration: 6 * 60 * 60 * 1000 });
+        return;
+      }
+
+      // 8. 安装依赖（可选）
       if (!options.skipInstall && isInteractive) {
         const { install } = await inquirer.prompt([
           {
@@ -236,7 +276,7 @@ export class InitCommand {
         }
       }
 
-      // 8. 显示后续步骤
+      // 9. 显示后续步骤
       console.log('\n✅ 项目初始化完成!\n');
       console.log('后续步骤:');
       console.log(`  cd ${context.projectName}`);
