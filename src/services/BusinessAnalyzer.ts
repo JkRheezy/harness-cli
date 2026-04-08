@@ -71,6 +71,8 @@ export class BusinessAnalyzer {
       return this.callOpenAI(prompt);
     } else if (this.provider === 'kimi') {
       return this.callKimi(prompt);
+    } else if (this.provider === 'anthropic') {
+      return this.callAnthropic(prompt);
     }
     throw new Error(`不支持的 LLM 提供商: ${this.provider}`);
   }
@@ -129,6 +131,38 @@ export class BusinessAnalyzer {
 
     const data = await response.json();
     return data.choices[0].message.content;
+  }
+
+  /**
+   * 调用 Anthropic API
+   */
+  private async callAnthropic(prompt: string): Promise<string> {
+    // 支持 Anthropic 官方和兼容端点（如 Kimi Coding）
+    const baseUrl = this.baseUrl || 'https://api.anthropic.com';
+    const apiUrl = baseUrl.includes('/v1') 
+      ? `${baseUrl}/messages` 
+      : `${baseUrl}/v1/messages`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-sonnet-20240229',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Anthropic API 错误: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content[0].text;
   }
 
   /**

@@ -316,12 +316,14 @@ export class InitCommand {
   /**
    * 加载 LLM 配置
    */
-  private async loadLLMConfig(): Promise<{ apiKey: string; provider: 'openai' | 'kimi'; baseUrl?: string } | null> {
+  private async loadLLMConfig(): Promise<{ apiKey: string; provider: 'openai' | 'kimi' | 'anthropic'; baseUrl?: string } | null> {
     try {
       // 从环境变量读取
       const openaiKey = process.env.OPENAI_API_KEY;
       const kimiKey = process.env.KIMI_API_KEY;
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
+      // 优先检测 OpenAI
       if (openaiKey) {
         return {
           apiKey: openaiKey,
@@ -330,6 +332,16 @@ export class InitCommand {
         };
       }
 
+      // 检测 Anthropic（兼容 Kimi Coding 等）
+      if (anthropicKey) {
+        return {
+          apiKey: anthropicKey,
+          provider: 'anthropic',
+          baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://api.kimi.com/coding'
+        };
+      }
+
+      // 原生 Kimi
       if (kimiKey) {
         return {
           apiKey: kimiKey,
