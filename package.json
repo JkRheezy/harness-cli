@@ -14,7 +14,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'),path=require('path'),src='src/telemetry/server/static',dst='dist/telemetry/server/static';fs.mkdirSync(dst,{recursive:true});fs.readdirSync(src).forEach(f=>fs.copyFileSync(path.join(src,f),path.join(dst,f)))\"",
     "dev": "ts-node src/cli.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
