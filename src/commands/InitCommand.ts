@@ -4,12 +4,17 @@ import inquirer from 'inquirer';
 import ora from 'ora';
 import { TemplateManager, TemplateContext } from '../templates/TemplateManager';
 import { Logger } from '../utils/Logger';
+import { BusinessAnalyzer } from '../services/BusinessAnalyzer';
+import { BusinessAnalysis } from './types';
+import * as Handlebars from 'handlebars';
 
 export interface InitOptions {
   force?: boolean;
   template?: string;
   projectName?: string;
   skipInstall?: boolean;
+  skipAnalysis?: boolean;  // 新增
+  autoStart?: boolean;     // 新增
 }
 
 export class InitCommand {
@@ -113,6 +118,52 @@ export class InitCommand {
       }
     }
 
+    // 4.5 智能业务分析（如果未跳过）
+    let businessAnalysis: BusinessAnalysis | undefined;
+    if (!options.skipAnalysis && isInteractive) {
+      const { enableSmartAnalysis } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'enableSmartAnalysis',
+          message: '是否启用智能业务分析（推荐）?',
+          default: true
+        }
+      ]);
+
+      if (enableSmartAnalysis) {
+        // 输入项目概述
+        const { overview } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'overview',
+            message: '项目概述（一句话描述业务目标）:',
+            validate: (input: string) => input.trim().length > 10 || '请提供更详细的描述（至少10个字符）'
+          }
+        ]);
+
+        // 获取 LLM 配置
+        const llmConfig = await this.loadLLMConfig();
+        if (llmConfig) {
+          const analyzer = new BusinessAnalyzer(llmConfig);
+          
+          const spinner = ora('正在进行业务分析...').start();
+          try {
+            businessAnalysis = await analyzer.analyze({
+              projectName: context.projectName,
+              overview,
+              template: templateName
+            });
+            spinner.succeed('业务分析完成!');
+          } catch (error) {
+            spinner.fail('业务分析失败，使用基础模板');
+            console.error(error);
+          }
+        } else {
+          console.log('⚠️ 未配置 LLM API Key，跳过智能分析');
+        }
+      }
+    }
+
     // 5. 确认目标目录
     const targetDir = path.isAbsolute(context.projectName) 
       ? context.projectName 
@@ -150,6 +201,18 @@ export class InitCommand {
     try {
       await this.templateManager.scaffold(templateName, targetDir, context);
       spinner.succeed('项目创建成功!');
+
+      // 生成智能文档
+      if (businessAnalysis) {
+        const docSpinner = ora('正在生成智能文档...').start();
+        try {
+          await this.generateSmartDocs(targetDir, businessAnalysis);
+          docSpinner.succeed('智能文档生成完成!');
+        } catch (error) {
+          docSpinner.fail('智能文档生成失败');
+          console.error(error);
+        }
+      }
 
       // 7. 安装依赖（可选）
       if (!options.skipInstall && isInteractive) {
@@ -208,5 +271,67 @@ export class InitCommand {
       default:
         return 'npm install';
     }
+  }
+
+  /**
+   * 加载 LLM 配置
+   */
+  private async loadLLMConfig(): Promise<{ apiKey: string; provider: 'openai' | 'kimi'; baseUrl?: string } | null> {
+    try {
+      // 从环境变量读取
+      const openaiKey = process.env.OPENAI_API_KEY;
+      const kimiKey = process.env.KIMI_API_KEY;
+
+      if (openaiKey) {
+        return {
+          apiKey: openaiKey,
+          provider: 'openai',
+          baseUrl: process.env.OPENAI_BASE_URL
+        };
+      }
+
+      if (kimiKey) {
+        return {
+          apiKey: kimiKey,
+          provider: 'kimi',
+          baseUrl: process.env.KIMI_BASE_URL || 'https://api.moonshot.cn/v1'
+        };
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 生成智能文档
+   */
+  private async generateSmartDocs(targetDir: string, analysis: BusinessAnalysis): Promise<void> {
+    // 注册 Handlebars 辅助函数
+    Handlebars.registerHelper('eq', (a, b) => a === b);
+
+    // 读取模板
+    const agentsTemplatePath = path.join(__dirname, '../templates/smart-agents.md.hbs');
+    const taskTemplatePath = path.join(__dirname, '../templates/initial-task.yaml.hbs');
+
+    const agentsTemplateSource = await fs.readFile(agentsTemplatePath, 'utf-8');
+    const taskTemplateSource = await fs.readFile(taskTemplatePath, 'utf-8');
+
+    // 编译模板
+    const agentsTemplate = Handlebars.compile(agentsTemplateSource);
+    const taskTemplate = Handlebars.compile(taskTemplateSource);
+
+    // 生成 AGENTS.md
+    const agentsContent = agentsTemplate(analysis);
+    await fs.writeFile(path.join(targetDir, 'AGENTS.md'), agentsContent, 'utf-8');
+
+    // 创建任务目录
+    const tasksDir = path.join(targetDir, '.harness', 'tasks');
+    await fs.mkdir(tasksDir, { recursive: true });
+
+    // 生成初始任务文件
+    const tasksContent = taskTemplate(analysis);
+    await fs.writeFile(path.join(tasksDir, '001-initial-tasks.yaml'), tasksContent, 'utf-8');
   }
 }
