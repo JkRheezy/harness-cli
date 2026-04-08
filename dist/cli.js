@@ -48,6 +48,7 @@ const ConfigLoader_1 = require("./utils/ConfigLoader");
 const Logger_1 = require("./utils/Logger");
 const visualize_1 = __importDefault(require("./commands/visualize"));
 const TelemetryDashboard_1 = require("./telemetry/dashboard/TelemetryDashboard");
+const telemetry_1 = require("./telemetry");
 const program = new commander_1.Command();
 const logger = new Logger_1.Logger();
 program
@@ -345,6 +346,24 @@ program
         logger.error('Error displaying telemetry:', error);
         process.exit(1);
     }
+});
+// ========== Telemetry Web UI 命令 ==========
+program
+    .command('telemetry-ui')
+    .description('启动 Telemetry Web UI')
+    .option('-p, --port <port>', '服务器端口', '9999')
+    .option('-d, --dir <directory>', 'Telemetry 数据目录', '.harness/telemetry')
+    .action(async (options) => {
+    const adapter = new telemetry_1.IndexedFileAdapter({
+        outputDir: options.dir,
+        persistIntervalMs: 5000
+    });
+    const server = new telemetry_1.TelemetryServer({
+        adapter,
+        port: parseInt(options.port)
+    });
+    await server.start();
+    console.log(`Telemetry UI: http://localhost:${options.port}`);
 });
 program.parse();
 //# sourceMappingURL=cli.js.map

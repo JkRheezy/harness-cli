@@ -11,6 +11,7 @@ import { ConfigLoader } from './utils/ConfigLoader';
 import { Logger } from './utils/Logger';
 import visualizeCommand from './commands/visualize';
 import { TelemetryDashboard } from './telemetry/dashboard/TelemetryDashboard';
+import { IndexedFileAdapter, TelemetryServer } from './telemetry';
 
 const program = new Command();
 const logger = new Logger();
@@ -341,6 +342,27 @@ program
       logger.error('Error displaying telemetry:', error);
       process.exit(1);
     }
+  });
+
+// ========== Telemetry Web UI 命令 ==========
+program
+  .command('telemetry-ui')
+  .description('启动 Telemetry Web UI')
+  .option('-p, --port <port>', '服务器端口', '9999')
+  .option('-d, --dir <directory>', 'Telemetry 数据目录', '.harness/telemetry')
+  .action(async (options) => {
+    const adapter = new IndexedFileAdapter({
+      outputDir: options.dir,
+      persistIntervalMs: 5000
+    });
+
+    const server = new TelemetryServer({
+      adapter,
+      port: parseInt(options.port)
+    });
+
+    await server.start();
+    console.log(`Telemetry UI: http://localhost:${options.port}`);
   });
 
 program.parse();
