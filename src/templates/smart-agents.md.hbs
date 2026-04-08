@@ -1,0 +1,97 @@
+# AGENTS.md - {{projectName}} Agent 协作指南
+
+> 本文档是 AI Agent 的入口指南，基于项目概述自动生成
+> **项目概述**: {{overview}}
+
+## 1. 快速开始 (2分钟)
+
+### 1.1 项目概述
+- **项目名称**: {{projectName}}
+- **技术栈**: {{techStack.backend}}{{#if techStack.frontend}} / {{techStack.frontend}}{{/if}} / {{techStack.database}}
+- **核心功能**: 
+{{#each coreFeatures}}
+  - {{this}}
+{{/each}}
+
+### 1.2 业务描述
+
+{{{businessDescription}}}
+
+### 1.3 环境准备
+```bash
+# 安装依赖
+npm install
+
+# 启动开发环境
+npm run dev
+
+# 运行测试
+npm test
+```
+
+## 2. 项目结构
+
+```
+{{#each directoryStructure}}
+{{#if (eq type 'directory')}}{{name}}/{{else}}{{name}}{{/if}}  # {{description}}
+{{#if children}}
+{{#each children}}
+  {{#if (eq type 'directory')}}{{name}}/{{else}}{{name}}{{/if}}  # {{description}}
+{{/each}}
+{{/if}}
+{{/each}}
+```
+
+## 3. 技术栈详情
+
+### 3.1 后端
+- {{techStack.backend}}
+
+### 3.2 数据库
+- {{techStack.database}}
+
+{{#if techStack.frontend}}
+### 3.3 前端
+- {{techStack.frontend}}
+{{/if}}
+
+{{#if techStack.other}}
+### 3.4 其他技术
+{{#each techStack.other}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+## 4. 开发规范
+
+- ❌ 不要违反层依赖规则（下层不依赖上层）
+- ✅ 必须为新功能编写测试 (覆盖率 > 80%)
+- ⚠️ 复杂逻辑需要中文注释说明
+
+## 5. 初始任务
+
+{{#each initialTasks}}
+### {{name}}
+**优先级**: {{priority}}
+
+{{description}}
+
+**验收标准**:
+{{#each acceptanceCriteria}}
+- [ ] {{this}}
+{{/each}}
+
+{{/each}}
+
+## 6. 使用 Harness CLI
+
+```bash
+# 启动无人值守开发
+harness loop --unattended
+
+# 查看项目状态
+harness status
+
+# 查看 telemetry 监控
+harness telemetry-ui --port 9999
+```

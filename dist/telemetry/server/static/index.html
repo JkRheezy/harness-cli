@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness Telemetry</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 Harness Telemetry</h1>
+      <div id="stats" class="stats">加载中...</div>
+    </header>
+
+    <div class="filters">
+      <input type="text" id="traceIdFilter" placeholder="Trace ID">
+      <input type="text" id="taskIdFilter" placeholder="Task ID">
+      <select id="statusFilter">
+        <option value="">全部状态</option>
+        <option value="success">成功</option>
+        <option value="error">错误</option>
+        <option value="in_progress">进行中</option>
+      </select>
+      <input type="datetime-local" id="fromTime">
+      <input type="datetime-local" id="toTime">
+      <button id="searchBtn">搜索</button>
+      <button id="refreshBtn">刷新</button>
+    </div>
+
+    <div class="content">
+      <div id="traceList" class="trace-list">
+        <div class="loading">加载 traces...</div>
+      </div>
+      
+      <div id="traceDetail" class="trace-detail hidden">
+        <div class="detail-header">
+          <h2>Trace 详情</h2>
+          <button id="closeDetail">×</button>
+        </div>
+        <div id="detailContent"></div>
+      </div>
+    </div>
+
+    <div class="pagination">
+      <button id="prevBtn" disabled>← 上一页</button>
+      <span id="pageInfo">第 1 页</span>
+      <button id="nextBtn" disabled>下一页 →</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
