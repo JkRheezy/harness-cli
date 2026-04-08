@@ -104,7 +104,13 @@ export class BusinessAnalyzer {
    * 调用 Kimi API
    */
   private async callKimi(prompt: string): Promise<string> {
-    const response = await fetch(this.baseUrl || 'https://api.moonshot.cn/v1/chat/completions', {
+    const baseUrl = this.baseUrl || 'https://api.moonshot.cn/v1';
+    // 确保 baseUrl 不以 /chat/completions 结尾
+    const apiUrl = baseUrl.endsWith('/chat/completions') 
+      ? baseUrl 
+      : `${baseUrl}/chat/completions`;
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
