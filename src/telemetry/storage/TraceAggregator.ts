@@ -21,6 +21,7 @@ export class TraceAggregator {
   private pendingTraces: Map<string, PendingTrace> = new Map();
   private completedTraces: CompleteTrace[] = [];
   private maxPendingTraces: number = 100;
+  private maxCompletedTraces: number = 1000;
   private maxTraceAgeMs: number = 5 * 60 * 1000; // 5 分钟
 
   /**
@@ -94,6 +95,11 @@ export class TraceAggregator {
     const completeTrace = this.buildCompleteTrace(pending, status);
     this.pendingTraces.delete(traceId);
     this.completedTraces.push(completeTrace);
+    
+    // 限制 completedTraces 大小
+    if (this.completedTraces.length > this.maxCompletedTraces) {
+      this.completedTraces = this.completedTraces.slice(-this.maxCompletedTraces);
+    }
     
     return completeTrace;
   }
