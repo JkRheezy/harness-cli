@@ -9,4 +9,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/**/__tests__/**/*'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(inquirer|ora|cli-spinners|is-unicode-supported|stdin-discarder)/)',
+  ],
 };
