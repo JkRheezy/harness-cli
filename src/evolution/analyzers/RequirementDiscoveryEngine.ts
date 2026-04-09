@@ -1,4 +1,9 @@
 /**
+ * @deprecated 请改用 GapAnalysisEngine，从 '../core/analysis' 导入。
+ * 此模块包含硬编码的电商需求，将被移除。
+ */
+
+/**
  * RequirementDiscoveryEngine - 自主发现代码缺口的引擎
  * 
  * 该引擎分析项目结构，自动发现缺失的模块、API、用户流程和数据模型
@@ -92,6 +97,7 @@ export class RequirementDiscoveryEngine {
   constructor(projectPath: string) {
     this.projectPath = projectPath;
     this.logger = new Logger();
+    console.warn('RequirementDiscoveryEngine 已废弃。请改用 GapAnalysisEngine。');
   }
 
   /**
