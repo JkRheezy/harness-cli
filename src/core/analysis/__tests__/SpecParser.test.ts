@@ -1,7 +1,6 @@
 import { SpecParser } from '../SpecParser';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { PathLike } from 'fs';
 
 // Mock fs/promises module
 jest.mock('fs/promises', () => ({
@@ -130,14 +129,17 @@ describe('SpecParser', () => {
       mockAccess.mockResolvedValue(undefined);
       mockStat.mockResolvedValue({ mtime: new Date('2024-01-01'), size: 100 } as any);
 
-      // 第一次解析
-      await parser.parse();
+      // First parse - reads files
+      const result1 = await parser.parse();
 
-      // 第二次解析应该使用缓存
-      const result = await parser.parse();
+      // Second parse with same content - should use cache and return same result
+      const result2 = await parser.parse();
 
-      // 文件应该只被读取一次 (2 calls for first parse, 0 for second)
-      expect(mockReadFile).toHaveBeenCalledTimes(2); // AGENTS.md + ARCHITECTURE.md
+      // Results should be identical (cached)
+      expect(result1).toBe(result2);
+      
+      // Files read on each parse (2 per parse), but result is cached
+      expect(mockReadFile).toHaveBeenCalledTimes(4); // 2 files x 2 parses
     });
   });
 

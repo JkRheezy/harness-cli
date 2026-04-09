@@ -31,15 +31,6 @@ export class SpecParser {
       // ARCHITECTURE.md doesn't exist
     }
 
-    // Check cache using file stats (cheaper than reading content)
-    const statsKey = this.hashContent(
-      JSON.stringify(agentsMdStats) + JSON.stringify(architectureMdStats)
-    );
-    
-    if (this.cache && this.cacheKey === statsKey) {
-      return this.cache;
-    }
-
     // Read file contents
     let agentsMdContent = '';
     let architectureMdContent = '';
@@ -49,7 +40,7 @@ export class SpecParser {
         agentsMdContent = await fs.readFile(agentsMdPath, 'utf-8');
       }
     } catch {
-      // AGENTS.md 未找到
+      // AGENTS.md not found
     }
 
     try {
@@ -57,7 +48,13 @@ export class SpecParser {
         architectureMdContent = await fs.readFile(architectureMdPath, 'utf-8');
       }
     } catch {
-      // ARCHITECTURE.md 未找到
+      // ARCHITECTURE.md not found
+    }
+
+    // Check cache using content hash to detect any content changes
+    const currentKey = this.hashContent(agentsMdContent + architectureMdContent);
+    if (this.cache && this.cacheKey === currentKey) {
+      return this.cache;
     }
 
     const agents = await this.parseAgentsMd(agentsMdContent);
@@ -75,9 +72,9 @@ export class SpecParser {
       workflows: []
     };
 
-    // 更新缓存 (using stats key)
+    // Update cache with content-based key
     this.cache = result;
-    this.cacheKey = statsKey;
+    this.cacheKey = currentKey;
 
     return result;
   }
@@ -130,7 +127,11 @@ export class SpecParser {
         currentSection = null;
       } else if (currentModule) {
         if (line.startsWith('**Layer:**')) {
-          currentModule.layer = line.replace('**Layer:**', '').trim() as any;
+          const validLayers = ['api', 'service', 'data', 'ui'] as const;
+          const layer = line.replace('**Layer:**', '').trim();
+          currentModule.layer = validLayers.includes(layer as typeof validLayers[number])
+            ? layer as ModuleSpec['layer']
+            : 'service';  // default
           currentSection = null;
         } else if (line.startsWith('**Description:**')) {
           currentModule.description = line.replace('**Description:**', '').trim();
