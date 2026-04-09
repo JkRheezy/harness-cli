@@ -47,8 +47,9 @@ describe('InitCommand Smart Features', () => {
     });
 
     it('应从环境变量读取 Kimi 配置', async () => {
-      // Clear OPENAI_API_KEY first to ensure kimi is selected
+      // Clear other API keys first to ensure kimi is selected
       delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
       process.env.KIMI_API_KEY = 'test-kimi-key';
       
       const config = await (command as any).loadLLMConfig();
@@ -62,6 +63,7 @@ describe('InitCommand Smart Features', () => {
     it('没有配置时应返回 null', async () => {
       delete process.env.OPENAI_API_KEY;
       delete process.env.KIMI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
       
       const config = await (command as any).loadLLMConfig();
       
