@@ -79,8 +79,13 @@ ${this.getTaskDescription()}
       const questions = this.extractQuestions(response);
       const rawNotes = this.extractXmlTag(response, 'raw_notes') || undefined;
 
+      // 如果没有提取到 worker_id 且没有 findings，视为解析失败
+      if (!workerId && findings.length === 0) {
+        throw new Error('No valid worker_id or findings found in response');
+      }
+
       return {
-        worker: workerId as WorkerType,
+        worker: (workerId || this.workerType) as WorkerType,
         confidence: isNaN(confidence) ? 0.5 : Math.max(0, Math.min(1, confidence)),
         findings,
         questions,
