@@ -1,13 +1,15 @@
 import { LLMAnalysisResponse, BusinessAnalysis, SmartInitOptions } from '../commands/types';
+import { AnalysisCoordinator, CoordinatorConfig } from './analysis';
 
 /**
  * 业务分析器
- * 使用 LLM 分析项目概述并生成业务架构、技术选型和初始任务
+ * 使用多轮 LLM 分析（4-phase coordinator/worker 架构）分析项目概述并生成业务架构、技术选型和初始任务
  */
 export class BusinessAnalyzer {
   private apiKey: string;
   private provider: string;
   private baseUrl?: string;
+  private coordinator: AnalysisCoordinator;
 
   constructor(config: {
     apiKey: string;
@@ -17,70 +19,77 @@ export class BusinessAnalyzer {
     this.apiKey = config.apiKey;
     this.provider = config.provider;
     this.baseUrl = config.baseUrl;
+    
+    // 创建 LLM 调用函数
+    const llmCaller = (prompt: string, model?: string) => this.callLLM(prompt, model);
+    
+    // 初始化协调器
+    const coordinatorConfig: Partial<CoordinatorConfig> = {
+      maxRetries: 2,
+      minConfidence: 0.7,
+      timeout: 60000,
+      models: {
+        research: this.getModelName(),
+        synthesis: this.getModelName(),
+        implementation: this.getModelName(),
+        verification: this.getModelName()
+      }
+    };
+    
+    this.coordinator = new AnalysisCoordinator(llmCaller, coordinatorConfig);
   }
 
   /**
    * 分析项目概述并生成业务架构
+   * 使用多轮 coordinator/worker 架构进行分析
    */
   async analyze(options: SmartInitOptions): Promise<BusinessAnalysis> {
-    const prompt = this.buildAnalysisPrompt(options);
+    // 委托给 coordinator 执行多阶段分析
+    const analysis = await this.coordinator.execute(options);
     
-    const response = await this.callLLM(prompt);
-    const analysis = this.parseResponse(response);
-
+    // coordinator 返回的结果中 projectName 和 overview 可能来自 LLM 输出
+    // 使用用户传入的值覆盖，确保一致性
     return {
+      ...analysis,
       projectName: options.projectName,
-      overview: options.overview,
-      ...analysis
+      overview: options.overview
     };
   }
 
   /**
-   * 构建分析提示词
+   * 根据 provider 获取模型名称
    */
-  private buildAnalysisPrompt(options: SmartInitOptions): string {
-    return `你是一个资深软件架构师，请根据以下项目概述进行业务分析和技术设计。
-
-## 项目信息
-- 项目名称: ${options.projectName}
-- 技术模板: ${options.template}
-- 项目概述: ${options.overview}
-
-## 请提供以下分析结果（JSON格式）
-
-1. **businessDescription**: 详细的业务描述（200-300字）
-2. **coreFeatures**: 核心功能列表（5-8个）
-3. **techStack**: 技术栈建议
-   - backend: 后端技术
-   - frontend: 前端技术（如有）
-   - database: 数据库
-   - other: 其他技术数组
-4. **directoryStructure**: 项目目录结构建议（树形，包含文件说明）
-5. **initialTasks**: 初始开发任务（3-5个）
-   - 每个任务包含: id, name, description, priority(high/medium/low), acceptanceCriteria(数组)
-
-## 输出格式要求
-必须是有效的 JSON，不要包含 markdown 代码块标记，直接返回 JSON 对象。`;
+  private getModelName(): string {
+    switch (this.provider) {
+      case 'openai':
+        return 'gpt-4';
+      case 'kimi':
+        return 'moonshot-v1-32k';
+      case 'anthropic':
+        return 'claude-3-sonnet-20240229';
+      default:
+        return 'gpt-4';
+    }
   }
 
   /**
-   * 调用 LLM API
+   * 调用 LLM API（保留原有实现）
    */
-  private async callLLM(prompt: string): Promise<string> {
+  private async callLLM(prompt: string, model?: string): Promise<string> {
     if (this.provider === 'openai') {
-      return this.callOpenAI(prompt);
+      return this.callOpenAI(prompt, model);
     } else if (this.provider === 'kimi') {
-      return this.callKimi(prompt);
+      return this.callKimi(prompt, model);
     } else if (this.provider === 'anthropic') {
-      return this.callAnthropic(prompt);
+      return this.callAnthropic(prompt, model);
     }
     throw new Error(`不支持的 LLM 提供商: ${this.provider}`);
   }
 
   /**
-   * 调用 OpenAI API
+   * 调用 OpenAI API（保留原有实现）
    */
-  private async callOpenAI(prompt: string): Promise<string> {
+  private async callOpenAI(prompt: string, model?: string): Promise<string> {
     const response = await fetch(this.baseUrl || 'https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -88,7 +97,7 @@ export class BusinessAnalyzer {
         'Authorization': `Bearer ${this.apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: model || 'gpt-4',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3
       })
@@ -103,11 +112,10 @@ export class BusinessAnalyzer {
   }
 
   /**
-   * 调用 Kimi API
+   * 调用 Kimi API（保留原有实现）
    */
-  private async callKimi(prompt: string): Promise<string> {
+  private async callKimi(prompt: string, model?: string): Promise<string> {
     const baseUrl = this.baseUrl || 'https://api.moonshot.cn/v1';
-    // 确保 baseUrl 不以 /chat/completions 结尾
     const apiUrl = baseUrl.endsWith('/chat/completions') 
       ? baseUrl 
       : `${baseUrl}/chat/completions`;
@@ -119,7 +127,7 @@ export class BusinessAnalyzer {
         'Authorization': `Bearer ${this.apiKey}`
       },
       body: JSON.stringify({
-        model: 'moonshot-v1-32k',
+        model: model || 'moonshot-v1-32k',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3
       })
@@ -134,10 +142,9 @@ export class BusinessAnalyzer {
   }
 
   /**
-   * 调用 Anthropic API
+   * 调用 Anthropic API（保留原有实现）
    */
-  private async callAnthropic(prompt: string): Promise<string> {
-    // 支持 Anthropic 官方和兼容端点（如 Kimi Coding）
+  private async callAnthropic(prompt: string, model?: string): Promise<string> {
     const baseUrl = this.baseUrl || 'https://api.anthropic.com';
     const apiUrl = baseUrl.includes('/v1') 
       ? `${baseUrl}/messages` 
@@ -151,7 +158,7 @@ export class BusinessAnalyzer {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: model || 'claude-3-sonnet-20240229',
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -163,29 +170,5 @@ export class BusinessAnalyzer {
 
     const data = await response.json();
     return data.content[0].text;
-  }
-
-  /**
-   * 解析 LLM 响应
-   */
-  private parseResponse(response: string): LLMAnalysisResponse {
-    // 清理可能的 markdown 代码块
-    const cleanResponse = response
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
-
-    try {
-      const parsed = JSON.parse(cleanResponse);
-      
-      // 验证必需字段
-      if (!parsed.businessDescription || !parsed.coreFeatures || !parsed.techStack) {
-        throw new Error('LLM 响应缺少必需字段');
-      }
-
-      return parsed as LLMAnalysisResponse;
-    } catch (error) {
-      throw new Error(`解析 LLM 响应失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
   }
 }
