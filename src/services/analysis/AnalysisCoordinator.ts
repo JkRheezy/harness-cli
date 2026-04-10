@@ -17,7 +17,7 @@ import { Verifier } from './Verifier';
 const DEFAULT_CONFIG: CoordinatorConfig = {
   maxRetries: 3,
   minConfidence: 0.8,
-  timeout: 120000, // 2分钟超时
+  timeout: 300000, // 5分钟超时
   models: {
     research: 'claude-3-5-sonnet',
     synthesis: 'claude-3-5-sonnet',
