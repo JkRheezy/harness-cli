@@ -1,0 +1,19 @@
+{{#each initialTasks}}
+---
+id: {{id}}
+name: {{name}}
+priority: {{priority}}
+description: |
+  {{description}}
+acceptanceCriteria:
+{{#each acceptanceCriteria}}
+  - {{this}}
+{{/each}}
+metadata:
+  estimatedComplexity: 3
+  requiredSkills:
+    - TypeScript
+    - Node.js
+---
+
+{{/each}}
