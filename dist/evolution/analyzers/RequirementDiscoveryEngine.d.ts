@@ -1,7 +1,6 @@
 /**
- * RequirementDiscoveryEngine - 自主发现代码缺口的引擎
- *
- * 该引擎分析项目结构，自动发现缺失的模块、API、用户流程和数据模型
+ * @deprecated 请改用 GapAnalysisEngine，从 '../core/analysis' 导入。
+ * 此模块包含硬编码的电商需求，将被移除。
  */
 import { Gap, ModuleRequirement, RequirementDiscoveryResult, ArchitecturePattern } from '../types';
 /**

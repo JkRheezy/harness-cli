@@ -14,9 +14,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs'),path=require('path');function copyDir(s,d){fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(f=>{const sp=path.join(s,f),dp=path.join(d,f);fs.statSync(sp).isDirectory()?copyDir(sp,dp):fs.copyFileSync(sp,dp);});}\
-copyDir('src/telemetry/server/static','dist/telemetry/server/static');\
-copyDir('src/templates','dist/templates');\"",
+    "build": "tsc && node -e \"const fs=require('fs'),path=require('path');function copyDir(s,d){fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(f=>{const sp=path.join(s,f),dp=path.join(d,f);fs.statSync(sp).isDirectory()?copyDir(sp,dp):fs.copyFileSync(sp,dp);});copyDir('src/telemetry/server/static','dist/telemetry/server/static');copyDir('src/templates','dist/templates');\"",
+
     "dev": "ts-node src/cli.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",

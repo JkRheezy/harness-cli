@@ -323,6 +323,8 @@ class InitCommand {
             // 从环境变量读取
             const openaiKey = process.env.OPENAI_API_KEY;
             const kimiKey = process.env.KIMI_API_KEY;
+            const anthropicKey = process.env.ANTHROPIC_API_KEY;
+            // 优先检测 OpenAI
             if (openaiKey) {
                 return {
                     apiKey: openaiKey,
@@ -330,6 +332,15 @@ class InitCommand {
                     baseUrl: process.env.OPENAI_BASE_URL
                 };
             }
+            // 检测 Anthropic（兼容 Kimi Coding 等）
+            if (anthropicKey) {
+                return {
+                    apiKey: anthropicKey,
+                    provider: 'anthropic',
+                    baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://api.kimi.com/coding'
+                };
+            }
+            // 原生 Kimi
             if (kimiKey) {
                 return {
                     apiKey: kimiKey,

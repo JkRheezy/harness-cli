@@ -52,6 +52,7 @@ const AutoEvolution_1 = require("../evolution/AutoEvolution");
 const HarnessGraph_1 = require("../orchestration/graph/HarnessGraph");
 const telemetry_1 = require("../telemetry");
 const collectors_1 = require("../telemetry/collectors");
+const analysis_1 = require("./analysis");
 class LoopController extends events_1.EventEmitter {
     constructor(config, options) {
         super();
@@ -82,6 +83,7 @@ class LoopController extends events_1.EventEmitter {
         this.logger = new Logger_1.Logger();
         // 确定工作目录
         const workingDir = config.projectPath || process.cwd();
+        this.projectPath = workingDir;
         this.logger.info(`📁 Working directory: ${workingDir}`);
         this.taskQueue = new TaskQueue_1.TaskQueue();
         this.executor = new TaskExecutor_1.TaskExecutor(config.llm, workingDir);
@@ -394,124 +396,47 @@ class LoopController extends events_1.EventEmitter {
     }
     async generateTasksFromProject() {
         try {
-            // 读取 AGENTS.md
-            const agentsMd = await this.readAgentsMd();
-            // 读取开发计划
-            const plans = await this.findDevelopmentPlans();
-            // 分析代码现状
-            const codeStatus = await this.analyzeCodebase();
-            let tasks = [];
-            if (plans.length === 0) {
-                this.logger.warn('⚠️ 未找到开发计划，基于代码现状生成默认任务');
-                // 基于代码现状生成默认任务
-                tasks = this.createTasksFromCodeStatus(codeStatus);
-            }
-            else {
-                // 根据计划和现状生成任务
-                tasks = this.createTasksFromPlans(plans, codeStatus);
-            }
-            // 加入队列
-            for (const task of tasks) {
+            this.logger.info('Generating tasks from gap analysis...');
+            const tasks = await this.analyzeCodebase();
+            // Convert BusinessTask to Task and enqueue
+            for (const businessTask of tasks) {
+                const task = {
+                    id: businessTask.id,
+                    title: businessTask.title,
+                    description: businessTask.description,
+                    requirements: businessTask.requirements,
+                    priority: this.mapPriority(businessTask.priority),
+                    status: 'pending',
+                    maxDuration: businessTask.maxDuration,
+                    createdAt: businessTask.createdAt
+                };
                 await this.taskQueue.enqueue(task);
-                this.logger.info(`📥 生成任务: ${task.title}`);
+                this.logger.info(`Enqueued task: ${task.title}`);
             }
-            this.logger.info(`✅ 已生成 ${tasks.length} 个初始任务`);
+            this.logger.info(`✅ Generated ${tasks.length} initial tasks from gap analysis`);
         }
         catch (error) {
-            this.logger.error('生成任务失败:', error.message);
+            this.logger.error('Failed to generate tasks:', error.message);
         }
     }
-    createTasksFromCodeStatus(codeStatus) {
-        const tasks = [];
-        const now = new Date();
-        // 根据缺失的组件生成任务（与 createTasksFromPlans 相同的逻辑）
-        if (!codeStatus.hasPickerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-picker`,
-                title: '实现 PickerAgent 选品智能体',
-                description: '实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意',
-                requirements: [
-                    '创建 src/lib/ai/agents/PickerAgent.ts',
-                    '实现趋势数据源接口',
-                    '实现产品创意生成逻辑',
-                    '添加单元测试'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
+    /**
+     * Map BusinessTask priority to Task priority
+     */
+    mapPriority(priority) {
+        switch (priority) {
+            case 'P0': return 'high';
+            case 'P1': return 'medium';
+            case 'P2': return 'low';
+            default: return 'medium';
         }
-        if (!codeStatus.hasDesignerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-designer`,
-                title: '实现 DesignerAgent 设计智能体',
-                description: '实现设计Agent，生成AI图像Prompt并调用图像生成API',
-                requirements: [
-                    '创建 src/lib/ai/agents/DesignerAgent.ts',
-                    '实现图像Prompt生成',
-                    '集成图像生成API',
-                    '添加设计模板'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        if (!codeStatus.hasMarketerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-marketer`,
-                title: '实现 MarketerAgent 营销智能体',
-                description: '实现营销Agent，生成商品文案、SEO优化、广告素材',
-                requirements: [
-                    '创建 src/lib/ai/agents/MarketerAgent.ts',
-                    '实现商品描述生成',
-                    '实现SEO关键词优化',
-                    '生成社交媒体文案'
-                ],
-                priority: 'medium',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        if (!codeStatus.hasOrchestrator) {
-            tasks.push({
-                id: `task-${Date.now()}-orchestrator`,
-                title: '实现 Orchestrator 协调器',
-                description: '实现Agent协调器，管理多Agent协作和状态流转',
-                requirements: [
-                    '创建 src/lib/ai/Orchestrator.ts',
-                    '实现Agent注册机制',
-                    '实现状态管理',
-                    '集成LangGraph'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        // 如果所有组件都已存在，生成一个代码审查任务
-        if (tasks.length === 0) {
-            tasks.push({
-                id: `task-${Date.now()}-review`,
-                title: '代码质量审查与优化',
-                description: '审查现有代码质量，识别改进点并生成优化建议',
-                requirements: [
-                    '分析代码结构和设计模式',
-                    '检查类型安全和错误处理',
-                    '识别性能瓶颈',
-                    '生成优化报告和改进代码'
-                ],
-                priority: 'medium',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        return tasks;
+    }
+    /**
+     * @deprecated Use GapAnalysisEngine via analyzeCodebase() instead
+     * This method is kept for backwards compatibility but no longer used.
+     */
+    createTasksFromCodeStatus(_codeStatus) {
+        this.logger.warn('createTasksFromCodeStatus is deprecated, use GapAnalysisEngine');
+        return [];
     }
     async readAgentsMd() {
         try {
@@ -556,107 +481,28 @@ class LoopController extends events_1.EventEmitter {
         return tasks;
     }
     async analyzeCodebase() {
-        const status = {
-            hasPickerAgent: false,
-            hasDesignerAgent: false,
-            hasMarketerAgent: false,
-            hasOrchestrator: false,
-            hasFrontend: false,
-            missingComponents: []
-        };
         try {
-            const files = await fs.readdir('src/lib/ai/agents');
-            status.hasPickerAgent = files.some(f => f.toLowerCase().includes('picker'));
-            status.hasDesignerAgent = files.some(f => f.toLowerCase().includes('designer'));
-            status.hasMarketerAgent = files.some(f => f.toLowerCase().includes('marketer'));
-            status.hasOrchestrator = files.some(f => f.toLowerCase().includes('orchestrator'));
+            const specParser = new analysis_1.SpecParser(this.projectPath);
+            const codeScanner = new analysis_1.CodeScanner(this.projectPath);
+            const gapDetector = new analysis_1.GapDetector();
+            const taskGenerator = new analysis_1.TaskGenerator();
+            const engine = new analysis_1.GapAnalysisEngine(specParser, codeScanner, gapDetector, taskGenerator);
+            const tasks = await engine.analyze(this.projectPath);
+            this.logger.info(`Generated ${tasks.length} tasks from gap analysis`);
+            return tasks;
         }
-        catch {
-            // 目录不存在
+        catch (error) {
+            this.logger.error('Gap analysis failed:', error);
+            return [];
         }
-        if (!status.hasPickerAgent)
-            status.missingComponents.push('PickerAgent');
-        if (!status.hasDesignerAgent)
-            status.missingComponents.push('DesignerAgent');
-        if (!status.hasMarketerAgent)
-            status.missingComponents.push('MarketerAgent');
-        if (!status.hasOrchestrator)
-            status.missingComponents.push('Orchestrator');
-        return status;
     }
-    createTasksFromPlans(plans, codeStatus) {
-        const tasks = [];
-        const now = new Date();
-        // 根据缺失的组件生成任务
-        if (!codeStatus.hasPickerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-picker`,
-                title: '实现 PickerAgent 选品智能体',
-                description: '实现选品Agent，包含Google Trends和Reddit趋势分析功能，生成产品创意',
-                requirements: [
-                    '创建 src/lib/ai/agents/PickerAgent.ts',
-                    '实现趋势数据源接口',
-                    '实现产品创意生成逻辑',
-                    '添加单元测试'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        if (!codeStatus.hasDesignerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-designer`,
-                title: '实现 DesignerAgent 设计智能体',
-                description: '实现设计Agent，生成AI图像Prompt并调用图像生成API',
-                requirements: [
-                    '创建 src/lib/ai/agents/DesignerAgent.ts',
-                    '实现图像Prompt生成',
-                    '集成图像生成API',
-                    '添加设计模板'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        if (!codeStatus.hasMarketerAgent) {
-            tasks.push({
-                id: `task-${Date.now()}-marketer`,
-                title: '实现 MarketerAgent 营销智能体',
-                description: '实现营销Agent，生成商品文案、SEO优化、广告素材',
-                requirements: [
-                    '创建 src/lib/ai/agents/MarketerAgent.ts',
-                    '实现商品描述生成',
-                    '实现SEO关键词优化',
-                    '生成社交媒体文案'
-                ],
-                priority: 'medium',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        if (!codeStatus.hasOrchestrator) {
-            tasks.push({
-                id: `task-${Date.now()}-orchestrator`,
-                title: '实现 Orchestrator 协调器',
-                description: '实现Agent协调器，管理多Agent协作和状态流转',
-                requirements: [
-                    '创建 src/lib/ai/Orchestrator.ts',
-                    '实现Agent注册机制',
-                    '实现状态管理',
-                    '集成LangGraph'
-                ],
-                priority: 'high',
-                status: 'pending',
-                maxDuration: 2 * 60 * 60 * 1000,
-                createdAt: now
-            });
-        }
-        return tasks;
+    /**
+     * @deprecated Use GapAnalysisEngine via analyzeCodebase() instead
+     * This method is kept for backwards compatibility but no longer used.
+     */
+    createTasksFromPlans(_plans, _codeStatus) {
+        this.logger.warn('createTasksFromPlans is deprecated, use GapAnalysisEngine');
+        return [];
     }
     async executeTask(task, options) {
         const startTime = Date.now();

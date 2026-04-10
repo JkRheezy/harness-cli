@@ -59,6 +59,7 @@ export declare class LoopController extends EventEmitter {
     private safetyGuard;
     private checkpointManager;
     private logger;
+    private projectPath;
     private isRunning;
     private startTime;
     private currentTask;
@@ -95,11 +96,23 @@ export declare class LoopController extends EventEmitter {
     stop(): Promise<void>;
     getStatus(): Promise<any>;
     private generateTasksFromProject;
+    /**
+     * Map BusinessTask priority to Task priority
+     */
+    private mapPriority;
+    /**
+     * @deprecated Use GapAnalysisEngine via analyzeCodebase() instead
+     * This method is kept for backwards compatibility but no longer used.
+     */
     private createTasksFromCodeStatus;
     private readAgentsMd;
     private findDevelopmentPlans;
     private extractTasksFromPlan;
     private analyzeCodebase;
+    /**
+     * @deprecated Use GapAnalysisEngine via analyzeCodebase() instead
+     * This method is kept for backwards compatibility but no longer used.
+     */
     private createTasksFromPlans;
     private executeTask;
     private processResult;
