@@ -1,0 +1,34 @@
+# ARCHITECTURE.md - {{projectName}} 架构总览
+
+## 技术栈
+
+### 后端
+{{techStack.backend}}
+
+### 前端
+{{#if techStack.frontend}}{{techStack.frontend}}{{else}}待定{{/if}}
+
+### 数据库
+{{techStack.database}}
+
+{{#if techStack.other}}
+### 其他技术
+{{#each techStack.other}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+## 项目结构
+
+```
+{{#each directoryStructure}}
+{{name}}{{#if (eq type 'directory')}}/{{/if}}  # {{description}}
+{{/each}}
+```
+
+## 架构决策
+
+待补充：关键架构决策记录（ADR）
+
+---
+*本文档由 Harness CLI 智能分析自动生成*

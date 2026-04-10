@@ -362,15 +362,30 @@ class InitCommand {
         Handlebars.registerHelper('eq', (a, b) => a === b);
         // 读取模板
         const agentsTemplatePath = path_1.default.join(__dirname, '../templates/smart-agents.md.hbs');
+        const businessTemplatePath = path_1.default.join(__dirname, '../templates/business.md.hbs');
+        const architectureTemplatePath = path_1.default.join(__dirname, '../templates/architecture.md.hbs');
         const taskTemplatePath = path_1.default.join(__dirname, '../templates/initial-task.yaml.hbs');
         const agentsTemplateSource = await fs_1.promises.readFile(agentsTemplatePath, 'utf-8');
+        const businessTemplateSource = await fs_1.promises.readFile(businessTemplatePath, 'utf-8');
+        const architectureTemplateSource = await fs_1.promises.readFile(architectureTemplatePath, 'utf-8');
         const taskTemplateSource = await fs_1.promises.readFile(taskTemplatePath, 'utf-8');
         // 编译模板
         const agentsTemplate = Handlebars.compile(agentsTemplateSource);
+        const businessTemplate = Handlebars.compile(businessTemplateSource);
+        const architectureTemplate = Handlebars.compile(architectureTemplateSource);
         const taskTemplate = Handlebars.compile(taskTemplateSource);
-        // 生成 AGENTS.md
+        // 生成简洁的 AGENTS.md（80-120行）
         const agentsContent = agentsTemplate(analysis);
         await fs_1.promises.writeFile(path_1.default.join(targetDir, 'AGENTS.md'), agentsContent, 'utf-8');
+        // 创建 docs 目录
+        const docsDir = path_1.default.join(targetDir, 'docs');
+        await fs_1.promises.mkdir(docsDir, { recursive: true });
+        // 生成详细的业务描述文档
+        const businessContent = businessTemplate(analysis);
+        await fs_1.promises.writeFile(path_1.default.join(docsDir, 'BUSINESS.md'), businessContent, 'utf-8');
+        // 生成架构文档
+        const architectureContent = architectureTemplate(analysis);
+        await fs_1.promises.writeFile(path_1.default.join(docsDir, 'ARCHITECTURE.md'), architectureContent, 'utf-8');
         // 创建任务目录
         const tasksDir = path_1.default.join(targetDir, '.harness', 'tasks');
         await fs_1.promises.mkdir(tasksDir, { recursive: true });

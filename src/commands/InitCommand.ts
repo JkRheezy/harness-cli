@@ -365,18 +365,36 @@ export class InitCommand {
 
     // 读取模板
     const agentsTemplatePath = path.join(__dirname, '../templates/smart-agents.md.hbs');
+    const businessTemplatePath = path.join(__dirname, '../templates/business.md.hbs');
+    const architectureTemplatePath = path.join(__dirname, '../templates/architecture.md.hbs');
     const taskTemplatePath = path.join(__dirname, '../templates/initial-task.yaml.hbs');
 
     const agentsTemplateSource = await fs.readFile(agentsTemplatePath, 'utf-8');
+    const businessTemplateSource = await fs.readFile(businessTemplatePath, 'utf-8');
+    const architectureTemplateSource = await fs.readFile(architectureTemplatePath, 'utf-8');
     const taskTemplateSource = await fs.readFile(taskTemplatePath, 'utf-8');
 
     // 编译模板
     const agentsTemplate = Handlebars.compile(agentsTemplateSource);
+    const businessTemplate = Handlebars.compile(businessTemplateSource);
+    const architectureTemplate = Handlebars.compile(architectureTemplateSource);
     const taskTemplate = Handlebars.compile(taskTemplateSource);
 
-    // 生成 AGENTS.md
+    // 生成简洁的 AGENTS.md（80-120行）
     const agentsContent = agentsTemplate(analysis);
     await fs.writeFile(path.join(targetDir, 'AGENTS.md'), agentsContent, 'utf-8');
+
+    // 创建 docs 目录
+    const docsDir = path.join(targetDir, 'docs');
+    await fs.mkdir(docsDir, { recursive: true });
+
+    // 生成详细的业务描述文档
+    const businessContent = businessTemplate(analysis);
+    await fs.writeFile(path.join(docsDir, 'BUSINESS.md'), businessContent, 'utf-8');
+
+    // 生成架构文档
+    const architectureContent = architectureTemplate(analysis);
+    await fs.writeFile(path.join(docsDir, 'ARCHITECTURE.md'), architectureContent, 'utf-8');
 
     // 创建任务目录
     const tasksDir = path.join(targetDir, '.harness', 'tasks');
