@@ -17,7 +17,7 @@ class BusinessAnalyzer {
         const coordinatorConfig = {
             maxRetries: 2,
             minConfidence: 0.7,
-            timeout: 60000,
+            timeout: 300000, // 5分钟超时
             models: {
                 research: this.getModelName(),
                 synthesis: this.getModelName(),
